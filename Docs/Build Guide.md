@@ -610,3 +610,11 @@
   - 2차: `PlayerMotor`에서 non-owner 입력 시뮬레이션 차단
 - 회귀 의도:
   - Owner가 아닌 플레이어가 동일 입력으로 같이 움직이던 경로를 코드 레벨에서 봉쇄
+
+### 2026-03-07 01:05 (KST)
+- reconnect check6 실패 패턴:
+  - `Channel LicenseClient-gar doesn't exist`
+  - `Connection to channel LicenseClient-gar refused`
+  - `Timed-out after 60.00s ... return code 199`
+- 판정 유지:
+  - 네트워크/게임플레이 레이어가 아닌 라이선싱 IPC 블로커
