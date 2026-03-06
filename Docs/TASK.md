@@ -504,3 +504,30 @@
   - 원격 상호작용 커밋 committed=True 및 Delivery accepted. delivered=1/3 케이스 재확인
 - [ ] 후속
   - interStellaClient 복제 프로젝트와 본 프로젝트 코드 동기화 자동화(검증 일관성용)
+
+### 2026-03-07 02:46 (KST) 원격 rewrite 동기화
+- [x] 원격 상태 재검증
+  - GitHub API 확인: visibility=public, main=cd99e0c (docs: add copilot review instructions)
+  - ruleset 확인: PR Reaview, target=branch, enforcement=active
+- [x] 안전 동기화 수행
+  - 현재 브랜치 백업 생성: codex/licensing-ipc-recovery-pre-sync-20260307-024024
+  - codex/licensing-ipc-recovery를 origin/main 기준으로 rebase
+  - 중복 패치(commit 8b98947)는 upstream 반영 상태로 자동 skip
+- [x] 원격 브랜치 정렬
+  - git push --force-with-lease origin codex/licensing-ipc-recovery 완료
+  - 현재 분기 상태: origin/main 대비 ahead 1 (d3f60e7)
+- [x] PR 상태 재검증
+  - PR #4 head=d3f60e7, base=cd99e0c
+  - mergeable_state=clean
+
+### 2026-03-07 02:46 (KST)
+- force-push rewrite 이후 안전 동기화 체크리스트:
+  1. git status로 미커밋 변경 유무 확인
+  2. git fetch --prune --tags로 원격 ref 갱신
+  3. 작업 브랜치 백업 브랜치 생성
+  4. 최신 origin/main 기준 rebase
+  5. git push --force-with-lease로 원격 브랜치 업데이트
+  6. PR head/base 및 mergeable 상태 재확인
+- 원칙:
+  - rewrite 이후에는 일반 push 대신 --force-with-lease 사용
+  - 미커밋 변경이 있으면 먼저 보존(backup/stash) 후 진행

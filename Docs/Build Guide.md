@@ -638,3 +638,15 @@
 - 라이선싱 운영 메모:
   - 안정적으로 붙는 경로는 Host Hub 세션 인자(-hubSessionId, -accessToken, -licensingIpc)를 재사용한 Client 실행
   - 실패 패턴(code 199) 발생 시 editor licensing IPC 충돌 여부를 먼저 확인
+
+### 2026-03-07 02:46 (KST)
+- force-push rewrite 이후 안전 동기화 체크리스트:
+  1. git status로 미커밋 변경 유무 확인
+  2. git fetch --prune --tags로 원격 ref 갱신
+  3. 작업 브랜치 백업 브랜치 생성
+  4. 최신 origin/main 기준 rebase
+  5. git push --force-with-lease로 원격 브랜치 업데이트
+  6. PR head/base 및 mergeable 상태 재확인
+- 원칙:
+  - rewrite 이후에는 일반 push 대신 --force-with-lease 사용
+  - 미커밋 변경이 있으면 먼저 보존(backup/stash) 후 진행
