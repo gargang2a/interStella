@@ -520,3 +520,101 @@
   - PR: #2 (main 대상)
 - 후속 실행:
   - PR 머지 후 Host/Client 2프로세스 검증 체크리스트 실행
+
+### 2026-03-07 00:08 (KST)
+- 2프로세스 재검증 실행 기록(신규):
+  1. Host Play 시작 상태에서 Client(Editor) 실행
+  2. Client 인자:
+     - `-interstella-auto-interact 1`
+     - `-interstella-auto-interact-count 2`
+  3. 성공 로그 확인:
+     - Host: `Remote connection started for Id 1`
+     - Host: `Assigned client 1 to slot 1 (PlayerB)`
+     - Host: `PlayerInteractionNetworkRelay ... committed=True` (2회)
+     - Host: `Delivery accepted. delivered=1/3`
+     - Client: `auto-interact ... successes=2/2`
+  4. 오류 필터 확인:
+     - Host 콘솔 `PacketId`/`unhandled` 검색 결과 0건
+- disconnect/reconnect 체크(부분):
+  - 기존 Client 종료 시 timeout -> slot release 정상
+  - 신규 Client 재실행은 라이선싱 초기화 지연이 길면 접속 확인까지 대기 필요
+  - 권장: 재실행 후 Host 콘솔에 `Remote connection started`가 찍힐 때까지 1~2분 대기
+
+### 2026-03-07 00:13 (KST)
+- 재접속 검증 중 환경 이슈 기록:
+  - Client 재실행 로그에서 Licensing 단계 타임아웃(60s) 후 code 199 종료
+  - 이 경우 접속 검증 자체가 시작되지 않으므로 네트워크 성공/실패로 판정하지 않음
+- 운영 메모:
+  - 먼저 Client Editor가 정상 진입했는지 확인 후 접속 로그(`Starting session mode=ClientOnly`)를 기준으로 검증 시작
+
+### 2026-03-07 00:16 (KST)
+- reconnect 최종 검증 실패 케이스(신규):
+  - 로그 파일:
+    - `Logs/client-reconnect-check1-20260307-000832.log`
+    - `Logs/client-reconnect-check2-20260307-001023.log`
+  - 실패 패턴:
+    - `Timed-out after 60.00s, waiting for channel: "LicenseClient-gar"`
+    - `Application will terminate with return code 199`
+- 조치 결과:
+  - `Unity.Licensing.Client` 재기동 후에도 동일
+- 판정 규칙:
+  - 위 패턴 발생 시 네트워크/게임플레이 검증 실패가 아닌 `에디터 런타임 환경 블로커`로 분류
+
+### 2026-03-07 00:24 (KST)
+- sequence 안정성 회귀 테스트(신규):
+  1. `NetworkSequenceComparerTests` 실행(EditMode)
+  2. 기대 결과:
+     - 총 6개 테스트 통과
+     - wrap-around 구간에서 최신/구버전 판정 정확
+- 적용 파일:
+  - `Assets/Game/Netcode/Runtime/NetworkSequenceComparer.cs`
+  - `Assets/Game/Netcode/Runtime/PlayerFuelNetworkState.cs`
+  - `Assets/Game/Netcode/Runtime/TetherNetworkStateReplicator.cs`
+- 테스트 결과:
+  - `passed=6, failed=0, skipped=0`
+
+### 2026-03-07 00:33 (KST)
+- 라이선싱 우회 실험(신규):
+  1. Hub licensing client 수동 실행
+     - `Unity.Licensing.Client.exe --namedPipe LicenseClient-gar --cloudEnvironment production`
+  2. Client Editor 재기동
+  3. 로그 확인
+     - `Channel LicenseClient-gar doesn't exist`
+     - `Connection to channel LicenseClient-gar refused`
+     - `Timed-out after 60.00s ... code 199`
+- 판정:
+  - 네트워크/게임플레이 문제가 아닌 라이선싱 IPC 계층 블로커
+
+### 2026-03-07 00:39 (KST)
+- reconnect 재시도(check5) 결과:
+  - `Connection to channel LicenseClient-gar refused`
+  - `Timed-out after 60.00s, waiting for channel ...`
+  - 종료 코드 `199`
+- 운영 조치:
+  - 실패 재시도 후 남는 보조 Licensing client 프로세스는 정리하여 기본 인스턴스만 남김
+- 현재 판정:
+  - 세션 내 자동 재검증은 중단, 라이선싱 정상화 후 재개
+
+### 2026-03-07 00:47 (KST)
+- GitHub PR 상태(신규):
+  - PR #3 생성 완료
+  - URL: https://github.com/gargang2a/interStella/pull/3
+- 포함 범위:
+  - netcode sequence 보강
+  - EditMode 테스트 추가/통과
+  - reconnect 검증 블로커 문서화
+
+### 2026-03-07 00:58 (KST)
+- 입력 권한 이중 가드(신규):
+  - 1차: `PlayerOwnershipInputGate`에서 InputReader/Interaction enable 제어
+  - 2차: `PlayerMotor`에서 non-owner 입력 시뮬레이션 차단
+- 회귀 의도:
+  - Owner가 아닌 플레이어가 동일 입력으로 같이 움직이던 경로를 코드 레벨에서 봉쇄
+
+### 2026-03-07 01:05 (KST)
+- reconnect check6 실패 패턴:
+  - `Channel LicenseClient-gar doesn't exist`
+  - `Connection to channel LicenseClient-gar refused`
+  - `Timed-out after 60.00s ... return code 199`
+- 판정 유지:
+  - 네트워크/게임플레이 레이어가 아닌 라이선싱 IPC 블로커

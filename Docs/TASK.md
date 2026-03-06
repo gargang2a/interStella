@@ -397,3 +397,91 @@
   - PR #2: https://github.com/gargang2a/interStella/pull/2
 - [ ] 다음 단계
   - PR #2 리뷰/머지 후 2프로세스 실검증 재실행
+
+### 2026-03-07 00:08 (KST) 진행 스냅샷
+- [x] 2프로세스 Host/Client 재검증(Owner 상호작용)
+  - Host: `Remote connection started for Id 1`
+  - Host: `Assigned client 1 to slot 1 (PlayerB)`
+  - Host: `PlayerInteractionNetworkRelay ... committed=True` (2회)
+  - Host: `[RepairStationObjective] Delivery accepted. delivered=1/3`
+  - Client: `auto-interact attempt ... successes=2/2`
+- [x] durable/transient 오류 필터 점검
+  - Host 콘솔 `PacketId`, `unhandled` 0건
+- [x] disconnect 슬롯 해제 경계 재확인
+  - `Id [1] Address [127.0.0.1] has timed out`
+  - `Released slot 1 from client 1; ownership removed from PlayerB`
+- [ ] reconnect 최종 완료 재확인(동일 세션)
+  - 목표 로그: `Assigned client <newId> to slot 1 (PlayerB)`
+  - 현상: 재실행 Client가 라이선싱 초기화 단계에서 접속 로그 미출력
+
+### 2026-03-07 00:13 (KST) 진행 스냅샷
+- [x] 문서/브랜치 진행 상태 원격 반영
+  - branch: `codex/host-client-e2e-recheck`
+  - commit: `1474ae6`
+  - push 완료
+- [x] 환경 블로커 원인 분리
+  - Client 재실행 실패 원인: Unity Licensing 초기화 타임아웃(code 199)
+  - 범주: 네트코드 로직 이슈 아님(에디터 실행 환경)
+- [ ] reconnect 최종 완료 재확인
+  - 라이선싱 정상화 후 동일 시나리오 재실행 필요
+
+### 2026-03-07 00:16 (KST) 진행 스냅샷
+- [x] reconnect 최종 검증 재시도 2회
+  - 결과: Client 라이선싱 타임아웃(code 199)으로 검증 단계 진입 실패
+- [x] 라이선싱 프로세스 재기동 조치
+  - `Unity.Licensing.Client` 재기동 후에도 동일 증상
+- [ ] reconnect 최종 완료 재확인
+  - 선행조건: Client Editor 라이선싱 정상 진입
+
+### 2026-03-07 00:24 (KST) 진행 스냅샷
+- [x] netcode sequence 공통 비교 유틸 추가
+  - `Assets/Game/Netcode/Runtime/NetworkSequenceComparer.cs`
+- [x] Fuel/Tether sequence 판정 보강
+  - `PlayerFuelNetworkState`: submit dedupe 기준 공통화
+  - `TetherNetworkStateReplicator`: break sequence wrap-around 안전 비교
+- [x] EditMode 테스트 추가 및 통과(6/6)
+  - `NetworkSequenceComparerTests`
+- [ ] reconnect 최종 완료 재확인
+  - Client Editor 라이선싱 블로커(code 199) 해소 후 재시도 필요
+
+### 2026-03-07 00:33 (KST) 진행 스냅샷
+- [x] 라이선싱 채널 우회 재시도
+  - Hub client를 `--namedPipe LicenseClient-gar`로 직접 실행
+- [x] 재시도 결과 수집
+  - `client-reconnect-check4-20260307-002847.log`
+  - 실패 패턴: channel not exist -> refused -> timeout(code 199)
+- [ ] reconnect 최종 완료 재확인
+  - Unity 라이선싱 IPC 정상화 이후 재실행 필요
+
+### 2026-03-07 00:39 (KST) 진행 스냅샷
+- [x] reconnect 재시도(check5)
+  - 로그: `Logs/client-reconnect-check5-20260307-003438.log`
+  - 결과: licensing channel refused -> timeout(code 199)
+- [x] 라이선싱 프로세스 정리
+  - 보조 인스턴스 종료, 기본 에디터 채널 인스턴스만 유지
+- [ ] reconnect 최종 완료 재확인
+  - 환경 복구 후 재실행 필요
+
+### 2026-03-07 00:47 (KST) 진행 스냅샷
+- [x] PR 생성
+  - PR #3: https://github.com/gargang2a/interStella/pull/3
+- [x] PR 상태 명시
+  - reconnect 최종 검증은 licensing IPC blocker로 pending
+- [ ] merge 여부 결정
+  - reconnect 완료 로그 확보 후 머지 또는 blocker 명시 상태로 머지 판단
+
+### 2026-03-07 00:58 (KST) 진행 스냅샷
+- [x] Owner/Remote 입력 경계 강화(이중 가드)
+  - 파일: `Assets/Game/Features/Player/PlayerMotor.cs`
+  - 변경: non-owner인 경우 입력 기반 시뮬레이션/연료 소모 경로 차단
+- [x] 스크립트 검증
+  - `PlayerMotor.cs` validate_script 통과
+- [ ] reconnect 최종 완료 재확인
+  - 라이선싱 IPC 블로커 해소 후 재실행
+
+### 2026-03-07 01:05 (KST) 진행 스냅샷
+- [x] reconnect 재시도(check6)
+  - 로그: `Logs/client-reconnect-check6-20260307-010236.log`
+  - 결과: channel not exist/refused -> timeout(code 199)
+- [ ] reconnect 최종 완료 재확인
+  - 환경(licensing IPC) 정상화 필요
