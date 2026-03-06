@@ -594,3 +594,12 @@
   - 실패 재시도 후 남는 보조 Licensing client 프로세스는 정리하여 기본 인스턴스만 남김
 - 현재 판정:
   - 세션 내 자동 재검증은 중단, 라이선싱 정상화 후 재개
+
+### 2026-03-07 00:47 (KST)
+- GitHub PR 상태(신규):
+  - PR #3 생성 완료
+  - URL: https://github.com/gargang2a/interStella/pull/3
+- 포함 범위:
+  - netcode sequence 보강
+  - EditMode 테스트 추가/통과
+  - reconnect 검증 블로커 문서화
