@@ -584,3 +584,13 @@
      - `Timed-out after 60.00s ... code 199`
 - 판정:
   - 네트워크/게임플레이 문제가 아닌 라이선싱 IPC 계층 블로커
+
+### 2026-03-07 00:39 (KST)
+- reconnect 재시도(check5) 결과:
+  - `Connection to channel LicenseClient-gar refused`
+  - `Timed-out after 60.00s, waiting for channel ...`
+  - 종료 코드 `199`
+- 운영 조치:
+  - 실패 재시도 후 남는 보조 Licensing client 프로세스는 정리하여 기본 인스턴스만 남김
+- 현재 판정:
+  - 세션 내 자동 재검증은 중단, 라이선싱 정상화 후 재개
