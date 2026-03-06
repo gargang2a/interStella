@@ -379,3 +379,13 @@
   - PR: https://github.com/gargang2a/interStella/pull/1
 - [ ] 다음 단계
   - 네트워크/플레이 루프 수동 체감 검증(이동 손맛/시점/수리 완주)
+
+### 2026-03-06 23:22 (KST) 진행 스냅샷
+- [x] durable vs transient 전송 경계 2차 보강
+  - PlayerFuelNetworkState: submit sequence + ownership 강제 강화
+  - RepairObjectiveNetworkState: delivery transient 이벤트 분리
+  - TetherNetworkStateReplicator: break transient sequence 도입
+- [x] 스크립트 검증 완료
+  - validate_script(3/3) errors=0, warnings=0
+- [ ] 다음 단계
+  - 2프로세스 Host/Client 실검증(Owner 입력, Remote 관찰, reconnect 슬롯/상태 복구)
