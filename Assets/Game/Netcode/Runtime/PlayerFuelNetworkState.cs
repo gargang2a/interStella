@@ -31,6 +31,8 @@ namespace InterStella.Game.Netcode.Runtime
         private float _nextSendTime;
         private float _lastAcceptedFuel = float.MinValue;
         private float _lastAcceptedFuelTime = -1f;
+        private ushort _nextSubmitSequence;
+        private int _lastAcceptedSubmitSequence = -1;
 
         private void Awake()
         {
@@ -52,6 +54,7 @@ namespace InterStella.Game.Netcode.Runtime
         public override void OnStartServer()
         {
             PublishFromLocalFuel();
+            _lastAcceptedSubmitSequence = -1;
         }
 
         private void FixedUpdate()
@@ -89,14 +92,20 @@ namespace InterStella.Game.Netcode.Runtime
                 return;
             }
 
-            SubmitFuelToServer(localFuel);
+            ushort submitSequence = _nextSubmitSequence++;
+            SubmitFuelToServer(localFuel, submitSequence);
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void SubmitFuelToServer(float currentFuel, NetworkConnection caller = null)
+        [ServerRpc(RequireOwnership = true)]
+        private void SubmitFuelToServer(float currentFuel, ushort submitSequence, NetworkConnection caller = null)
         {
             int expectedOwnerId = ResolveExpectedOwnerId();
             if (expectedOwnerId < 0 || caller == null || caller.ClientId != expectedOwnerId)
+            {
+                return;
+            }
+
+            if (!IsNewSubmitSequence(submitSequence))
             {
                 return;
             }
@@ -109,6 +118,7 @@ namespace InterStella.Game.Netcode.Runtime
 
             _currentFuelSync.Value = clampedFuel;
             UpdateLastAcceptedFuel(clampedFuel);
+            _lastAcceptedSubmitSequence = submitSequence;
         }
 
         private void HandleCurrentFuelChanged(float previous, float next, bool asServer)
@@ -192,6 +202,18 @@ namespace InterStella.Game.Netcode.Runtime
         {
             _lastAcceptedFuel = acceptedFuel;
             _lastAcceptedFuelTime = Time.unscaledTime;
+        }
+
+        private bool IsNewSubmitSequence(ushort submitSequence)
+        {
+            if (_lastAcceptedSubmitSequence < 0)
+            {
+                return true;
+            }
+
+            ushort lastSequence = (ushort)_lastAcceptedSubmitSequence;
+            int delta = (submitSequence - lastSequence + 65536) % 65536;
+            return delta > 0 && delta < 32768;
         }
 
         private float ClampFuel(float currentFuel)
