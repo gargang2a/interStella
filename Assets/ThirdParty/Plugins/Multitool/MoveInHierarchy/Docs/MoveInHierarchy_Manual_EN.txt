@@ -1,0 +1,298 @@
+MoveInHierarchy Manual
+Version: 1.0
+Last updated: 2025-11-19
+Asset: Multitool / MoveInHierarchy (Unity Editor Tool)
+Target Unity: 2021.3+ (tested with URP templates)
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+1. Overview
+2. Requirements
+3. Installation
+4. Quick Start
+5. Features Overview
+6. Step-by-Step Setup Tutorial
+7. Hotkeys
+8. Advanced Features
+9. Troubleshooting
+10. FAQ
+11. Uninstall
+12. Changelog
+13. Support
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+This is a simple and lightweight tool that allows you to change the order of objects
+within the hierarchy. It supports multi-selection of objects, but only under a single
+parent. You can use it with hotkeys or with the compact overlay menu.
+
+================================================================================
+2. REQUIREMENTS
+================================================================================
+
+- Unity 2021.3 LTS or newer
+- Objects in hierarchy (works with any GameObject hierarchy)
+
+================================================================================
+3. INSTALLATION
+================================================================================
+
+1) Import the package into your project
+2) Ensure the folder appears at: Assets/Plugins/Multitool/MoveInHierarchy
+3) Open the window: Tools  > Multitool > Move In Hierarchy
+
+================================================================================
+4. QUICK START
+================================================================================
+
+1) Select one or more objects in the Hierarchy window
+2) Use hotkeys to move them:
+   - Ctrl+[ to move up one position
+   - Ctrl+] to move down one position
+   - Ctrl+Shift+[ to move to the top
+   - Ctrl+Shift+] to move to the bottom
+3) Or use the compact overlay menu in Scene View (toggle via Tools > Multitool > Move In Hierarchy > Show Overlay)
+
+Note: When selecting multiple objects, they must all share the same parent. You cannot select a parent and its child together.
+
+================================================================================
+5. FEATURES OVERVIEW
+================================================================================
+
+- Move objects up/down in hierarchy: Change the order of objects within the same parent
+- Move to top/bottom: Quickly move selected objects to the first or last position
+- Multi-selection support: Move multiple objects at once (must share the same parent)
+- Hotkey support: Fast keyboard shortcuts for all operations
+- Overlay menu: Compact floating menu in Scene View
+- Undo/Redo support: All operations support Unity's undo system
+- Works in Hierarchy and Scene views: Hotkeys work regardless of which window is focused
+- Automatic focus: Hierarchy window automatically scrolls to show moved objects
+
+================================================================================
+6. STEP-BY-STEP SETUP TUTORIAL
+================================================================================
+
+Step 1: Installation
+- Import the MoveInHierarchy package into your Unity project
+- Verify the folder is located at: Assets/Plugins/Multitool/MoveInHierarchy
+
+Step 2: Basic Usage
+- Open your scene in Unity
+- Select an object in the Hierarchy window
+- Press Ctrl+[ to move it up, or Ctrl+] to move it down
+- The object's position in the hierarchy will change immediately
+
+Step 3: Enabling Overlay Menu
+- Go to Tools > Multitool > Move In Hierarchy > Show Overlay
+- A compact floating menu will appear in the Scene View
+- Click the buttons to move selected objects
+
+Step 4: Multi-Selection
+- Hold Ctrl (or Cmd on Mac) and click multiple objects
+- Ensure all selected objects share the same parent
+- Use any movement method to move the entire group together
+
+Step 5: Undo Operations
+- After moving objects, press Ctrl+Z (Cmd+Z on Mac) to undo
+- Press Ctrl+Y (Cmd+Shift+Z on Mac) to redo
+- All operations are fully integrated with Unity's undo system
+
+================================================================================
+7. HOTKEYS
+================================================================================
+
+All hotkeys work when objects are selected in the Hierarchy or Scene view:
+
+Ctrl+[ (Cmd+[ on Mac)
+- Move selected object(s) up by one position
+- Swaps position with the object directly above
+
+Ctrl+] (Cmd+] on Mac)
+- Move selected object(s) down by one position
+- Swaps position with the object directly below
+
+Ctrl+Shift+[ (Cmd+Shift+[ on Mac)
+- Move selected object(s) to the top
+- Places them at the first position under their parent
+
+Ctrl+Shift+] (Cmd+Shift+] on Mac)
+- Move selected object(s) to the bottom
+- Places them at the last position under their parent
+Note: All these hotkeys are configurable via Unity's Shortcut Manager
+(Edit > Shortcuts). Search for "Multitool/Move In Hierarchy" to find them.
+
+Hotkeys only work when:
+- At least one object is selected
+- All selected objects share the same parent (for multi-selection)
+- No parent and child are selected together
+
+================================================================================
+8. ADVANCED FEATURES
+================================================================================
+
+Multi-Selection Behavior:
+- When multiple objects are selected, they move as a group while maintaining their relative order
+- The group moves together, preserving the internal arrangement of selected objects
+- Useful for reorganizing entire sections of your hierarchy at once
+
+Overlay Menu:
+- Toggle visibility via Tools > Multitool > Move In Hierarchy > Show Overlay
+- Appears as a compact floating panel in Scene View
+- Buttons are automatically disabled when selection is invalid
+- Provides visual feedback with icons for each operation
+
+Parent Grouping:
+- Objects are automatically grouped by their parent when moving
+- Each parent's children are moved independently
+- This allows moving objects from different parents simultaneously (if valid)
+
+Focus Management:
+- After moving objects, the Hierarchy window automatically scrolls to show them
+- For "Move To Top" and "Move Up", focus goes to the topmost object
+- For "Move To Bottom" and "Move Down", focus goes to the bottommost object
+- Helps you quickly see the results of your operations
+
+Undo Integration:
+- All operations create proper undo entries
+- Operations are grouped together for cleaner undo history
+- Works seamlessly with Unity's standard undo/redo system
+- Each operation type has a descriptive undo name
+
+================================================================================
+9. TROUBLESHOOTING
+================================================================================
+
+Problem: Hotkeys don't work
+Solution: Ensure at least one object is selected in the Hierarchy or Scene view. 
+Hotkeys only work when objects are selected and the selection is valid
+(all objects share the same parent, no parent-child relationships in selection).
+
+Problem: Multi-selection operations not working
+Solution: All selected objects must share the same parent. You cannot select a
+parent and its child together. Try selecting only siblings
+(objects with the same parent).
+
+Problem: Overlay menu not visible
+Solution: Enable it via Tools > Multitool > Move In Hierarchy > Show Overlay.
+The menu appears in Scene View as a compact floating panel.
+
+Problem: Objects don't move when using hotkeys
+Solution: Check that you're using the correct key combinations (Ctrl+[ or Ctrl+]
+on Windows/Linux, Cmd+[ or Cmd+] on Mac). Ensure no other application
+is intercepting these keys. Try clicking in the Hierarchy window first
+to ensure it has focus.
+
+Problem: Overlay menu buttons are disabled
+Solution: This indicates an invalid selection. Ensure all selected objects share
+the same parent and no parent-child relationships exist in the selection.
+
+Problem: Undo doesn't work
+Solution: All operations support Unity's undo system. If undo isn't working,
+check that you haven't disabled Unity's undo system. Use Ctrl+Z (Cmd+Z on Mac)
+to undo operations.
+
+Problem: Objects move but hierarchy doesn't scroll to show them
+Solution: The tool automatically scrolls the Hierarchy window to show moved
+objects. If this doesn't happen, try manually scrolling or clicking on the
+moved object to focus it.
+
+Problem: Can't move objects to top/bottom
+Solution: If objects are already at the top or bottom of their parent's children
+list, they cannot move further. Check the current position in the Hierarchy
+window.
+
+Problem: Hotkeys conflict with other Unity shortcuts
+Solution: This tool uses standard Unity key combinations. If conflicts occur,
+you may need to disable conflicting shortcuts in Unity's Shortcut Manager
+(Edit > Shortcuts).
+
+================================================================================
+10. FAQ
+================================================================================
+
+Q: Does it work with prefabs?
+A: Yes, you can move objects in prefab instances. The changes will be reflected
+in the prefab instance, but be aware of prefab override behavior in Unity.
+
+Q: Does it affect build performance?
+A: No, this is an editor-only tool with no runtime code. It has zero impact on
+build size or runtime performance.
+
+Q: Can I change the hotkeys?
+A: Yes. Hotkeys are exposed to Unity's Shortcut Manager. Open Edit > Shortcuts,
+search for "Multitool/Move In Hierarchy" and assign any key combinations you like.
+By default, the tool uses Ctrl+[ / Ctrl+] (Cmd+[ / Cmd+] on Mac) for up/down and
+Ctrl+Shift+[ / Ctrl+Shift+] (Cmd+Shift+[ / Cmd+Shift+] on Mac) for top/bottom.
+
+Q: Does it work with UI Toolkit?
+A: This tool works with any GameObject hierarchy in Unity, including UI Toolkit
+GameObjects. However, it only affects the hierarchy order, not UI Toolkit-specific functionality.
+
+Q: Can I disable the overlay menu?
+A: Yes, toggle it off via Tools > Multitool > Move In Hierarchy > Show Overlay.
+The setting is saved in EditorPrefs and persists between Unity sessions.
+
+Q: What happens if I select objects from different parents?
+A: The tool will only move objects that share the same parent. Objects from
+different parents will be grouped by their parent and moved independently within their respective groups.
+
+Q: Can I move objects between different parents?
+A: No, this tool only changes the order of objects within the same parent.
+To move objects to a different parent, use Unity's standard drag-and-drop in the Hierarchy window.
+
+Q: Does it work with nested hierarchies?
+A: Yes, you can move objects at any level of nesting. Just ensure all selected
+objects share the same immediate parent.
+
+Q: Will it work if I have a parent and child selected together?
+A: No, the tool prevents this to avoid circular dependencies and confusion.
+You'll see a notification explaining that the operation is unavailable.
+
+Q: Can I use it with locked GameObjects?
+A: The tool respects Unity's standard GameObject locking. Locked objects cannot
+be moved, but you can still move their siblings.
+
+Q: Does it work in Play mode?
+A: The tool is designed for editor use. While it may work in Play mode, it's
+recommended to use it only in Edit mode to avoid unexpected behavior.
+
+Q: What Unity versions are supported?
+A: Unity 2021.3 LTS or newer. The tool has been tested with URP templates,
+but should work with any Unity project setup.
+
+================================================================================
+11. UNINSTALL
+================================================================================
+
+1) Close Unity Editor
+2) Delete the folder: Assets/Plugins/Multitool/MoveInHierarchy
+3) No runtime code remains in builds
+4) EditorPrefs settings can be manually cleared if desired (key: MIH_OverlayEnabled)
+
+================================================================================
+12. CHANGELOG
+================================================================================
+
+Version 1.0.1 (21.11.2025)
+- overlay window width fix for unity6
+
+Version 1.0 (2025-09-30):
+
+================================================================================
+13. SUPPORT
+================================================================================
+
+For support and bug reports:
+- Use the Asset Store support link associated with the package
+- Include Unity version, reproduction steps, and screenshots
+- Check the troubleshooting section first
+
+Thank you for using MoveInHierarchy!
+
+================================================================================
+END OF MANUAL
+================================================================================
