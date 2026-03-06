@@ -531,3 +531,28 @@
 - 원칙:
   - rewrite 이후에는 일반 push 대신 --force-with-lease 사용
   - 미커밋 변경이 있으면 먼저 보존(backup/stash) 후 진행
+
+### 2026-03-07 03:16 (KST) 진행 스냅샷
+- [x] PR #4 머지 완료
+  - merge commit: a859dc7 (`merge: PR #4 licensing-ipc-recovery`)
+  - main 최신 기준선으로 로컬 동기화 완료
+- [x] 다음 작업 브랜치 생성
+  - branch: codex/client-sync-automation
+- [x] interStellaClient 동기화 자동화 스크립트 추가
+  - `.codex/workflows/client/sync-interstella-client.ps1`
+  - 기본 동작: `Assets/Game`, package manifest/lock, 핵심 ProjectSettings 파일 동기화
+  - 실행 검증: dry-run + 실제 동기화 완료
+- [x] 재접속 회귀 자동 판정 스크립트 추가
+  - `.codex/workflows/netcode/run-reconnect-regression.ps1`
+  - 시나리오: Client A 접속 -> 강제 종료 -> Client B 조기 재접속 -> Host 로그 패턴 검증
+- [x] 회귀 자동 판정 실행 결과
+  - `RECONNECT_REGRESSION_PASS`
+  - summary: `Logs/reconnect-regression-summary-20260307-031141.json`
+  - releasedClientId=1, reassignedClientId=2
+- [ ] 후속
+  - 스크립트를 `.codex/workflows` 루트 인덱스 문서에 통합 안내
+
+### 2026-03-07 03:19 (KST) 진행 스냅샷
+- [x] `.codex/workflows` 루트 인덱스 문서 추가
+  - `.codex/workflows/README.md`
+  - Git/Client Sync/Netcode Regression 스크립트 경로 통합 안내

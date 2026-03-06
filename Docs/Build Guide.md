@@ -650,3 +650,19 @@
 - 원칙:
   - rewrite 이후에는 일반 push 대신 --force-with-lease 사용
   - 미커밋 변경이 있으면 먼저 보존(backup/stash) 후 진행
+
+### 2026-03-07 03:16 (KST)
+- 신규 워크플로우 추가:
+  1. Client 동기화
+     - `powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interstella-client.ps1`
+     - 옵션: `-WhatIf`, `-Mirror`
+  2. 재접속 회귀 자동 판정
+     - `powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1`
+     - 느린 환경 권장: `-ClientBootTimeoutSec 360`
+- 최신 실행 결과:
+  - PASS 로그: `Logs/reconnect-regression-summary-20260307-031141.json`
+  - 핵심 판정: queued/released/reassigned 패턴 모두 감지
+
+### 2026-03-07 03:19 (KST)
+- 워크플로우 인덱스 문서:
+  - `.codex/workflows/README.md`
