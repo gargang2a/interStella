@@ -39,3 +39,7 @@ Thumbs.db
 
 # Unity asset package source files (re-importable, often oversized)
 *.unitypackage
+
+# Local third-party asset drop zone
+Assets/ThirdParty/
+Assets/ThirdParty.meta
