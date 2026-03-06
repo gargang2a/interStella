@@ -572,3 +572,15 @@
   - `Assets/Game/Netcode/Runtime/TetherNetworkStateReplicator.cs`
 - 테스트 결과:
   - `passed=6, failed=0, skipped=0`
+
+### 2026-03-07 00:33 (KST)
+- 라이선싱 우회 실험(신규):
+  1. Hub licensing client 수동 실행
+     - `Unity.Licensing.Client.exe --namedPipe LicenseClient-gar --cloudEnvironment production`
+  2. Client Editor 재기동
+  3. 로그 확인
+     - `Channel LicenseClient-gar doesn't exist`
+     - `Connection to channel LicenseClient-gar refused`
+     - `Timed-out after 60.00s ... code 199`
+- 판정:
+  - 네트워크/게임플레이 문제가 아닌 라이선싱 IPC 계층 블로커

@@ -443,3 +443,12 @@
   - `NetworkSequenceComparerTests`
 - [ ] reconnect 최종 완료 재확인
   - Client Editor 라이선싱 블로커(code 199) 해소 후 재시도 필요
+
+### 2026-03-07 00:33 (KST) 진행 스냅샷
+- [x] 라이선싱 채널 우회 재시도
+  - Hub client를 `--namedPipe LicenseClient-gar`로 직접 실행
+- [x] 재시도 결과 수집
+  - `client-reconnect-check4-20260307-002847.log`
+  - 실패 패턴: channel not exist -> refused -> timeout(code 199)
+- [ ] reconnect 최종 완료 재확인
+  - Unity 라이선싱 IPC 정상화 이후 재실행 필요
