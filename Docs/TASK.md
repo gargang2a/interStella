@@ -478,3 +478,10 @@
   - `PlayerMotor.cs` validate_script 통과
 - [ ] reconnect 최종 완료 재확인
   - 라이선싱 IPC 블로커 해소 후 재실행
+
+### 2026-03-07 01:05 (KST) 진행 스냅샷
+- [x] reconnect 재시도(check6)
+  - 로그: `Logs/client-reconnect-check6-20260307-010236.log`
+  - 결과: channel not exist/refused -> timeout(code 199)
+- [ ] reconnect 최종 완료 재확인
+  - 환경(licensing IPC) 정상화 필요
