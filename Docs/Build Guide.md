@@ -512,3 +512,11 @@
      - 중복 break 적용 완화
 - 검증 명세:
   - Unity MCP validate_script 3개 파일 통과(diagnostics 없음)
+
+### 2026-03-06 23:28 (KST)
+- 브랜치/PR 결과:
+  - branch: codex/netcode-durable-transient-hardening
+  - commit: 7b2bef2
+  - PR: #2 (main 대상)
+- 후속 실행:
+  - PR 머지 후 Host/Client 2프로세스 검증 체크리스트 실행
