@@ -452,3 +452,12 @@
   - 실패 패턴: channel not exist -> refused -> timeout(code 199)
 - [ ] reconnect 최종 완료 재확인
   - Unity 라이선싱 IPC 정상화 이후 재실행 필요
+
+### 2026-03-07 00:39 (KST) 진행 스냅샷
+- [x] reconnect 재시도(check5)
+  - 로그: `Logs/client-reconnect-check5-20260307-003438.log`
+  - 결과: licensing channel refused -> timeout(code 199)
+- [x] 라이선싱 프로세스 정리
+  - 보조 인스턴스 종료, 기본 에디터 채널 인스턴스만 유지
+- [ ] reconnect 최종 완료 재확인
+  - 환경 복구 후 재실행 필요
