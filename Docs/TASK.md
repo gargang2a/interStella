@@ -1,0 +1,350 @@
+# interStella TASK
+
+## 문서 운영 규칙
+- 이 문서는 Append-Only로 운영한다.
+- 완료된 작업도 삭제하지 않고 상태를 갱신해 이력으로 남긴다.
+- 신규 항목은 기존 항목 아래에 이어서 추가한다.
+
+## 현재 스프린트 백로그 (MVP 기반)
+- [ ] 공통 상태 타입 정리: MatchPhase, FuelState, TetherState, ScrapState, RepairState
+- [ ] Player 분리 구조 골격: InputReader, Motor, Fuel, Interaction, Presentation, NetworkBridge
+- [ ] 무중력 6DoF 로컬 이동 구현
+- [ ] 연료 소모/회복/고갈 규칙 구현
+- [ ] 테더 상태 모델 및 제약 솔버 분리 구현
+- [ ] 스크랩 픽업/드롭/운반 루프 구현
+- [ ] 정거장 수리 목표(요구량/납품량/완료) 구현
+- [ ] 승리/실패 판정 및 매치 페이즈 전이 구현
+- [ ] 로컬 Host/Client 검증 시나리오 정리
+- [ ] Steam 통합 전 체크리스트 확정
+
+## 실행 순서 (권장)
+1. 로컬 단일 플레이 루프 완성
+2. 로컬 2인 Host/Client 동기화
+3. FishNet 권한/복제/보정 정리
+4. Steam 로비/초대/릴레이 통합
+5. Steam 2인 E2E 플레이 테스트
+
+## 변경 이력 (Append-Only)
+### 2026-03-05 18:03 (KST)
+- 문서 신규 생성
+- MVP 기준 백로그 초기 등록
+- 실행 순서(로컬 완성 후 Steam 통합) 고정
+
+### 2026-03-05 18:08 (KST)
+- 반복 운영 태스크 추가: 기능 변경 후 `기획서/TASK/Build Guide`에 변경 요약 누적 기록
+- 규칙 재확인: 체크박스 항목은 삭제 대신 상태 전환으로 이력 유지
+
+### 2026-03-05 17:58 (KST)
+- 사용자 요청 반영: "옵시디언에 기록해"
+- 문서 운영 태스크 실행: 3개 기준 문서에 동시 누적 기록
+
+### 2026-03-05 18:24 (KST)
+- [x] Unity MCP 패키지 설치 (`com.coplaydev.unity-mcp` embedded)
+- [x] Codex config의 `unityMCP`를 stdio(uvx) 모드로 전환
+- [ ] Unity Editor 내 stdio bridge 활성화 확인 (`:6400` 리스닝 확인)
+- [ ] Codex 세션 재시작 후 `unityMCP` MCP handshake 재검증
+
+### 2026-03-05 18:43 (KST) 진행 스냅샷
+- [x] Unity MCP 연결/제어 검증 (scene 조회, play/stop, console 조회)
+- [x] Vertical Slice MVP 씬 생성 및 기본 오브젝트 배치
+- [x] Player/Tether/Scavenge/Repair/Stations 1차 코드 골격 반영
+- [x] 로컬 PlayMode 스모크 테스트 (치명 에러/예외 미검출)
+- [ ] 인스펙터급 참조 검증 자동화 (`resources/read` 이슈 우회 또는 수정)
+- [ ] FishNet Host/Client 권한 경계 구현 1차 (durable/transient 분리 전송)
+- [ ] Steam 로비/초대/릴레이 통합 전 로컬 2인 완주 테스트 케이스 확정
+
+### 2026-03-05 18:53 (KST) 진행 스냅샷
+- [x] 비주얼 프록시 패스 1차 완료 (플레이어/정거장/스크랩/테더 식별 색)
+- [x] 우주 배경용 행성/소행성 프록시 배치 (콜라이더 제거)
+- [x] 카메라 우주 톤 배경 적용
+- [x] PlayMode 스모크 테스트 재검증 (치명 에러/예외 미검출)
+- [ ] 실제 아트 에셋(모델/스카이박스/VFX) 수급 시 프록시 치환 파이프라인 적용
+- [ ] FishNet 권한 경계 구현 1차 (durable/transient 분리 전송)
+
+### 2026-03-05 21:19 (KST) 진행 스냅샷
+- [x] 사용자 지정 에셋 반영: Earth(FBX), Player(FBX), Skybox1(mat)
+- [x] Earth 프리팹 Missing Script 오류 우회 (프리팹 제거 -> FBX 기반 대체)
+- [x] PlayMode 재검증 (Missing Script 오류 미재현, MCP 로그만 확인)
+- [ ] 플레이어 2인 식별 색/코스튬 분리(현재 동일 모델)
+- [ ] 로프 비주얼 에셋 후보 선정(기능과 네트워크 제약 분리 원칙 유지)
+
+### 2026-03-05 21:35 (KST) 진행 스냅샷
+- [x] `Unity-Verlet-Rope` 레퍼런스 클론 및 코드 검토
+- [x] `TetherVerletRopeView` 구현/연결 (시각 전용)
+- [x] `TetherSystem`에 Verlet View 적용, 기존 `TetherView` 비활성화
+- [x] PlayMode 시각 검증 스크린샷 확보
+- [ ] 2인 이동 중 로프 안정성(반대방향, 하드리밋) 수동 체감 테스트
+- [ ] FishNet Host/Client에서 로프 시각 일관성 점검
+
+### 2026-03-05 22:45 (KST) 진행 스냅샷
+- [x] 테더 시각 시나리오 재검증(슬랙/원거리 하드리밋) 캡처
+- [x] `TetherVerletRopeView` 상태 색상 반영 보강(거리 기반 tension 평가)
+- [x] LineRenderer 동적 색상 재질 교체(`M_Tether_Dynamic.mat`)
+- [x] Missing Script 진단 유틸 추가 및 활성 씬 스캔 완료(누락 없음)
+- [ ] FishNet 패키지 도입
+- [ ] FishNet Host/Client 시각 일관성 점검 (패키지 도입 후)
+
+### 2026-03-05 23:16 (KST) 진행 스냅샷
+- [x] 플레이어 이동 불가 원인 확인: `PlayerMotor`의 `_inputReader`/`_playerFuel` 씬 참조 누락
+- [x] `PlayerMotor` 방어 패치: `Awake`에서 `GetComponent` 자동 연결
+- [x] 에디터 누락 복구 보강: `OnValidate` 자동 연결 추가
+- [x] Unity MCP 스크립트 검증/리프레시 수행 (컴파일 오류 없음)
+- [ ] VerticalSlice_MVP 실제 조작 체감 재검증 (WASD/R/F, 마우스, Q/E)
+
+### 2026-03-05 23:46 (KST) 진행 스냅샷
+- [x] 마우스 감도 완화: `PlayerInputReader`에 `_lookSensitivity` 추가(기본 0.25)
+- [x] 회전 과민 완화: `VerticalSlice_MVP`의 PlayerA/B `_lookAcceleration` 4 -> 2 조정
+- [x] 카메라 모드 전환 구현: `PlayerCameraModeController` 추가 및 `Main Camera` 연결
+- [x] 단축키 매핑 반영: `1=1인칭`, `2=전체시점`, `3=3인칭`
+- [ ] PlayMode 체감 검증(시점별 조작감/멀미/가시성)
+
+### 2026-03-06 00:14 (KST) 진행 스냅샷
+- [x] FishNet 패키지 도입 (`Packages/manifest.json`, `packages-lock.json` 반영)
+- [x] Netcode 어댑터 1차 구현:
+  - `FishNetSessionService` 추가 (`ISessionService`)
+  - `FishNetAuthorityGateway` 추가 (`INetworkAuthorityGateway`)
+- [x] 씬 참조 전환:
+  - `StationMatchController._sessionServiceBehaviour` -> `FishNetSessionService`
+  - `PlayerA/B PlayerNetworkBridge._authorityGatewayBehaviour` -> `FishNetAuthorityGateway`
+- [x] `MatchSystems`에 `NetworkManager` 추가(TransportManager 기본 Tugboat 경로)
+- [x] 플레이어 식별성 보강:
+  - `PlayerPresentation` 자동 참조 복구 추가
+  - PlayerA/B 기본 색 분리(청록/오렌지)
+- [x] PlayMode 스모크 재검증(게임 오류/예외 미검출, MCP 연결 로그 제외)
+- [ ] FishNet 실제 플레이어 스폰/소유권/복제 경계(Host/Owner/Remote) 구현
+- [ ] 로컬 2인 Host/Client 완주 테스트 시나리오 실행
+
+### 2026-03-06 00:28 (KST) 진행 스냅샷
+- [x] FishNet 씬 플레이어 슬롯 할당기 추가 (`FishNetScenePlayerAssigner`)
+- [x] PlayerA/B 네트워크 컴포넌트 부착 (`NetworkObject`, `NetworkTransform`)
+- [x] 소유권 입력 게이트 추가 (`PlayerOwnershipInputGate`)
+- [x] `PlayerNetworkBridge.SetOwnerId(int)` 추가
+- [x] ownerId 기본값 `-1` 적용(접속 전 입력 차단)
+- [x] Host PlayMode 스모크: Tugboat server/client started, remote connection started 확인
+- [ ] 2프로세스 Host/Client 실테스트(Owner 입력, Remote 관찰, 해제/재접속)
+- [ ] 연료/수리/운반 상태의 durable/transient 동기화 분리 구현
+- [ ] 테더 제약의 네트워크 의미(연결/길이/브레이크) 동기화 1차
+
+### 2026-03-06 00:41 (KST) 진행 스냅샷
+- [x] FishNet `NetworkObject` 재직렬화 자동화 유틸 추가
+  - `Assets/Game/Netcode/Editor/FishNetOpenSceneReserializeUtility.cs`
+  - 메뉴: `Tools/InterStella/Netcode/Reserialize Open Scene NetworkObjects`
+- [x] `VerticalSlice_MVP` 열린 씬 기준 sceneId 재생성 수행
+  - 로그 확인: `Checked 4 NetworkObjects over 1 scenes. 4 sceneIds were generated.`
+- [x] PlayMode 재검증에서 기존 경고 미재현
+  - 기존 경고: `TetherSystem ... expected to be initialized but was not`
+- [ ] 2프로세스 Host/Client 실테스트(Owner 입력, Remote 관찰, 해제/재접속)
+- [ ] 연료/수리/운반 상태의 durable/transient 동기화 분리 구현 고도화
+
+### 2026-03-06 10:45 (KST) 진행 스냅샷
+- [x] 입력 권한 방어 보강(동시 조작 비의도 동작 대응)
+  - `FishNetAuthorityGateway`: 음수 owner/비정상 client connection 차단
+  - `PlayerNetworkBridge`: `ownerId < 0` 즉시 비권한 처리
+  - `PlayerInputReader`: 비활성화 시 입력 샘플 초기화(`ClearSample`, `OnDisable`)
+  - `PlayerOwnershipInputGate`: 비활성 전 샘플 초기화 호출
+- [x] PlayMode 스모크 재검증
+  - 서버/클라 시작 로그 정상
+  - 신규 컴파일/런타임 에러 미검출
+- [ ] 체감 검증: “한 키로 양 플레이어 동시 직접 조작” 재현 여부 확인(사용자 플레이 확인)
+
+### 2026-03-06 10:57 (KST) 진행 스냅샷
+- [x] 2프로세스 대비 소유권 판정 보강
+  - `PlayerNetworkBridge`가 `NetworkObject.IsOwner/OwnerId`를 직접 사용하도록 수정
+- [x] 세션 런타임 오버라이드 추가
+  - `FishNetSessionService`에 CLI/ENV 모드 전환 추가(`host/client/server`)
+- [x] durable/transient 보강 1차
+  - `PlayerFuelNetworkState`: 요청자 권한 검증 + 연료 점프값 검증
+  - `RepairObjectiveNetworkState`: 변화 없을 때 재동기화 억제
+  - `TetherNetworkStateReplicator`: 중복 상태 apply 억제
+- [x] Host PlayMode 스모크 재검증(컴파일/런타임 치명 오류 없음)
+- [ ] 2프로세스 Host/Client 자동 E2E 검증(MCP 단일 인스턴스 노출 제약 해소 후 재실행)
+- [ ] 2프로세스 수동 검증(Owner 입력, Remote 관찰, 해제/재접속 슬롯 복구) 결과 캡처
+
+### 2026-03-06 10:59 (KST) 진행 스냅샷
+- [x] 슬롯 이벤트 로그 추가 (`FishNetScenePlayerAssigner`)
+- [x] Host 실행 시 슬롯 할당 로그 확인
+  - `Assigned client 0 to slot 0 (PlayerA)`
+- [ ] 재접속 시 슬롯 회수/재할당 로그 확인(2프로세스 환경 필요)
+
+### 2026-03-06 11:24 (KST) 진행 스냅샷
+- [x] Unity MCP 소스 업데이트(`.tmp/unity-mcp-src` -> `beta@1fde301`)
+- [x] 임베디드 패키지 동기화(`Packages/com.coplaydev.unity-mcp`)
+- [x] 버전 상승 확인(`9.4.8-beta.17` -> `9.4.8-beta.19`)
+- [x] Unity 런타임 로그 확인
+  - `server=9.4.8-beta.19`
+  - `Updated stdio MCP configs to package version 9.4.8-beta.19.`
+
+### 2026-03-06 11:27 (KST) 진행 스냅샷
+- [x] 다음 작업 착수 전 현재 상태 재점검 완료
+  - 활성 씬: `Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity`
+  - 핵심 네트워크 대상 컴포넌트 존재 확인:
+    - `PlayerFuelNetworkState` (PlayerA/B)
+    - `RepairObjectiveNetworkState` (RepairStation)
+    - `TetherNetworkStateReplicator` (TetherSystem)
+    - `FishNetScenePlayerAssigner` (MatchSystems)
+- [x] 콘솔 기준 치명 오류/예외 미검출 (MCP 연결 로그 외)
+- [ ] 2프로세스 Host/Client 실검증
+  - Owner만 입력 가능
+  - Remote는 관찰만 가능
+  - 연결 해제/재접속 시 슬롯 회수/재할당 로그 확인
+- [ ] durable vs transient 전송 경계 2차 보강
+  - 현재 durable: 연료/수리/테더 SyncVar 경로 확인
+  - 남은 과제: transient 이벤트(픽업/드롭/브레이크 등) 중복/누락 방어 검증
+
+### 2026-03-06 11:42 (KST) 진행 스냅샷
+- [x] ECC 부분 설치(프로젝트 맞춤) 적용
+  - `.codex/config.toml` 추가
+  - `Docs/Codex Workflow Pack.md` 추가
+- [x] 표준 작업 루프/네트워크 DoD/명령 스니펫 기준선 문서화
+- [ ] 실검증 적용
+  - 2프로세스 Host/Client 검증을 신규 DoD 체크리스트 기준으로 재실행
+  - 슬롯 회수/재할당 로그 캡처 누적
+
+### 2026-03-06 11:47 (KST) 진행 스냅샷
+- [x] ECC 부분 설치 상세 노트 신규 작성
+  - `Docs/ECC 부분 설치 상세 가이드.md`
+  - 포함: 설치 이유, 설치 항목, 활용법, 체크리스트
+- [x] Obsidian 새 노트 반영 준비 완료(동기화 단계 진행)
+
+### 2026-03-06 12:20 (KST) 진행 스냅샷
+- [x] Host PlayMode 재검증 로그 수집
+  - `Starting session mode=Host`
+  - `Assigned client 0 to slot 0 (PlayerA)`
+- [x] 2프로세스 검증 시도
+  - Unity 추가 프로세스 client 인자로 실행 시도(`-interstella-mode client ...`)
+  - 로컬 포트/프로세스 기준 다중 Unity 프로세스 존재 확인
+- [ ] 2프로세스 실검증 완료
+  - 현재 MCP가 제어 가능한 인스턴스는 `interStella@b68d5cf0 (port 6401)` 1개만 확인
+  - Host 콘솔에서 `Remote connection started for Id 1` 미확인 (현재 `Id 0`만 확인)
+- [x] ECC 영향 관찰 기록
+  - DoD 기준(Owner/Remote/Reconnect)을 우선 체크포인트로 고정
+  - 실행 시도도 로그 근거(세션 시작/슬롯 할당/원격 ID) 중심으로 수집
+
+### 2026-03-06 12:43 (KST) 진행 스냅샷
+- [x] 2프로세스 Host/Client 실검증 성공 (클론 프로젝트 경로 활용)
+  - Host: `C:\Unity\interStella` (MCP 제어)
+  - Client: `C:\Unity\interStellaClient` (Unity 별도 프로세스)
+- [x] 접속/슬롯 할당 검증
+  - `Remote connection started for Id 1`
+  - `Assigned client 1 to slot 1 (PlayerB)`
+- [x] 연결 해제/재접속 슬롯 복구 검증
+  - `Id [1] Address [127.0.0.1] has timed out`
+  - `Released slot 1 from client 1; ownership removed from PlayerB`
+  - `Remote connection stopped for Id 1`
+  - `Remote connection started for Id 2`
+  - `Assigned client 2 to slot 1 (PlayerB)`
+- [x] 검증 보조 유틸 추가
+  - `Assets/Game/Netcode/Editor/InterStellaClientAutoPlayBootstrap.cs`
+  - 목적: `-executeMethod`로 클라이언트 에디터 자동 Play 진입
+- [ ] 잔여 검증
+  - Owner/Remote 입력 체감(조작 반응) 수동 검증 캡처
+  - transient 이벤트(스크랩 픽업/드롭) 네트워크 경계 보강
+
+### 2026-03-06 13:00 (KST) 진행 스냅샷
+- [x] transient 상호작용 요청 경계 추가
+  - 신규: `Assets/Game/Netcode/Runtime/PlayerInteractionNetworkRelay.cs`
+  - `ServerRpc(RequireOwnership=true)`로 Owner 요청만 허용
+  - 서버 쿨다운(`_serverRequestCooldown`)으로 과도 요청 중복 방어
+- [x] Player 상호작용 권한 게이트 정합성 보정
+  - `Assets/Game/Features/Player/PlayerInteraction.cs`
+  - `Assets/Game/Features/Player/PlayerOwnershipInputGate.cs`
+- [x] 씬 구성 반영
+  - `VerticalSlice_MVP`의 `PlayerA/PlayerB`에 `PlayerInteractionNetworkRelay` 부착
+- [x] 스크립트 검증
+  - 수정 파일 3개 `validate_script` 통과(에러 0)
+- [ ] 실플레이 검증(2프로세스)
+  - Client Owner가 `E` 입력 시 Host에서 상호작용(픽업/드롭/수리) 처리되는지 로그/체감 확인
+- [ ] 잔여 네트워크 보강
+  - 스크랩 durable 시각 상태(운반/월드/납품) 동기화 컴포넌트 설계 및 적용
+
+### 2026-03-06 13:06 (KST) 진행 스냅샷
+- [x] 스크랩 durable 동기화 컴포넌트 추가
+  - `Assets/Game/Netcode/Runtime/ScrapCarryNetworkState.cs`
+- [x] 스크랩 authoritative 상태 적용 메서드 보강
+  - `Assets/Game/Features/Scavenge/ScrapItem.cs`
+  - `SetCarriedStateAuthoritative`, `SetWorldStateAuthoritative`
+- [x] 납품 처리 안정화
+  - `MarkDelivered`에서 `gameObject.SetActive(false)` 제거
+  - 렌더러/콜라이더 기반 비활성으로 전환
+- [x] 씬 네트워크 구성 확장
+  - `Scrap_01~03`에 `NetworkObject + ScrapCarryNetworkState` 부착
+- [x] FishNet 재직렬화 및 저장
+  - 로그: `Checked 7 NetworkObjects over 1 scenes. 7 sceneIds were generated.`
+- [x] 컴파일/스모크 검증
+  - 스크립트 검증 통과, PlayMode 경고/에러 없음(MCP 연결 로그 제외)
+- [ ] 2프로세스 상호작용 실검증
+  - Client Owner의 픽업/드롭/수리 동작을 Host/Remote에서 체감 확인
+
+### 2026-03-06 15:12 (KST) 진행 스냅샷
+- [x] 재시작 이후 2프로세스 네트워크 재검증 완료
+  - 접속(Id 1) -> 타임아웃 해제 -> 재접속(Id 2) 로그 재확인
+- [x] disconnect 시 운반 스크랩 강제 드롭 반영
+  - `Assets/Game/Features/Scavenge/PlayerCarrySocket.cs`
+  - `Assets/Game/Netcode/Runtime/FishNetScenePlayerAssigner.cs`
+- [x] 슬롯 해제 경로에서 강제 드롭 로그 확인
+  - `Forced scrap drop on disconnect for client 1 at slot 1`
+- [x] 재접속 슬롯 복구 로그 확인
+  - `Assigned client 2 to slot 1 (PlayerB)`
+- [x] 매치 시작 리셋 안정화 반영
+  - `Assets/Game/Features/Player/PlayerFuel.cs`
+  - `Assets/Game/Features/Stations/StationMatchController.cs`
+- [x] 테스트 유틸 추가
+  - `Assets/Game/Netcode/Editor/InterStellaNetcodeDebugActions.cs`
+- [x] `ScrapItem` kinematic velocity 경고 완화 패치
+  - `Assets/Game/Features/Scavenge/ScrapItem.cs`
+- [ ] 실플레이 체감 검증(수동 입력)
+  - Client Owner `E` 입력으로 픽업/드롭/수리 루프를 직접 수행해 최종 체감/영상/스크린샷 확보
+
+### 2026-03-06 16:12 (KST) 진행 스냅샷
+- [x] 2프로세스 Owner 상호작용 RPC 경로 검증(자동)
+  - Host 로그: `[PlayerInteractionNetworkRelay] Accepted interaction request. caller=1, owner=1, committed=True, object=PlayerB`
+  - Client 로그: `auto-interact attempt 1/24, accepted=True, owner=PlayerB`
+- [x] auto-interact 부트스트랩 안정화
+  - 도메인 리로드 복구(SessionState)
+  - `-interstella-auto-interact 0/false` 파싱 버그 수정
+- [x] 디버그 검증 유틸 확장
+  - `Force Start Match`
+  - `Place Scrap_03 In Front Of PlayerB`
+- [x] disconnect carry-drop 경계 재검증
+  - `Forced scrap drop on disconnect for client 1 at slot 1`
+  - `Released slot 1 from client 1; ownership removed from PlayerB`
+- [x] reconnect 슬롯 복구 재확인
+  - `Assigned client 1 to slot 1 (PlayerB)` (ID 재사용 케이스)
+- [ ] 수동 체감 검증(사용자 입력)
+  - 실제 키입력 기준 1인칭/3인칭 전환, 이동 감도, 수리 완료까지 플레이 체감 캡처
+
+### 2026-03-06 16:18 (KST) 진행 스냅샷
+- [x] `-interstella-auto-interact 0` 비활성 파싱 검증
+  - auto-interact 로그 미발생 확인
+  - `Assigned client 1 to slot 1 (PlayerB)` 접속 경로는 정상
+
+### 2026-03-06 21:28 (KST) 진행 스냅샷
+- [x] 수리(Repair) 자동 상호작용 검증 경로 추가
+  - `-interstella-auto-interact-count` 구현
+  - `Place RepairStation In Front Of PlayerB` 디버그 메뉴 구현
+- [x] 2회 자동 상호작용(픽업+수리 납품) 로그 검증
+  - Host: `committed=True` 2회
+  - Host: `[RepairStationObjective] Delivery accepted. delivered=1/3`
+- [x] disconnect/reconnect 회귀 재검증
+  - `Forced scrap drop on disconnect ...`
+  - `Released slot ... ownership removed ...`
+  - 재접속 `Assigned client 1 to slot 1 (PlayerB)`
+- [x] auto-interact OFF 경로 재확인
+  - `-interstella-auto-interact 0`에서 auto-interact 로그 미발생
+- [ ] 수동 체감 검증(사용자 입력)
+  - 이동 손맛/시점 전환/수리 완주를 실제 조작으로 체감 확인
+
+### 2026-03-06 22:06 (KST) 진행 스냅샷
+- [x] GitHub MCP 연결 설정 반영
+  - Codex config에 `mcp_servers.github` 추가
+- [x] 자동 브랜치/커밋/풀 워크플로우 스크립트 추가
+  - `auto-branch.ps1`
+  - `auto-commit.ps1`
+  - `auto-pull.ps1`
+  - `auto-workflow.ps1`
+- [x] MCP 연결 체크 스크립트 추가
+  - `setup-github-mcp.ps1`
+- [x] 워크플로우 안내 문서 추가
+  - `Docs/GitHub MCP & Git Workflow.md`
+- [ ] Git 저장소 활성화
+  - 현재 `C:\Unity\interStella`에 `.git`이 없어 스크립트는 보호 중단 동작

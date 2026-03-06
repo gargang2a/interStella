@@ -1,0 +1,29 @@
+model = "gpt-5"
+model_provider = "openai"
+
+[projects.'C:\\Unity\\interStella']
+trust_level = "trusted"
+
+[permissions]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[features]
+web_search_request = true
+
+[history]
+persistent_instructions = """
+interStella execution profile (ECC partial):
+1) Work loop: explore -> implement minimal change -> validate -> append docs -> report.
+2) Netcode definition-of-done for network-affecting work:
+   - owner input only
+   - remote observe only
+   - disconnect/reconnect slot recovery verified
+   - durable vs transient boundary explicit
+3) Preserve AGENTS architecture boundaries (feature split, host authority, no presentation-as-truth).
+4) Always append updates to Docs/기획서.md, Docs/TASK.md, Docs/Build Guide.md.
+"""
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token_env_var = "GITHUB_PAT_TOKEN"
