@@ -57,6 +57,7 @@ namespace InterStella.Game.Netcode.Runtime
 
         public bool TryCommitAuthoritativeAction(string actionName, int requesterId)
         {
+            ResolveNetworkManagerIfMissing();
             if (!IsHostAuthority)
             {
                 return false;
@@ -67,23 +68,14 @@ namespace InterStella.Game.Netcode.Runtime
                 return false;
             }
 
-            if (_networkManager.IsClientStarted)
+            // Host-authoritative server commits validated remote requests.
+            if (_networkManager.IsServerStarted)
             {
-                if (_networkManager.ClientManager == null || _networkManager.ClientManager.Connection == null)
-                {
-                    return false;
-                }
-
-                int localClientId = _networkManager.ClientManager.Connection.ClientId;
-                if (localClientId < 0)
-                {
-                    return false;
-                }
-
-                return localClientId == requesterId;
+                return true;
             }
 
-            return _allowServerOnlyAuthoring;
+            // Local-only fallback: allow only if this process is the requester owner.
+            return IsAuthoritativeOwner(requesterId);
         }
 
 #if UNITY_EDITOR
