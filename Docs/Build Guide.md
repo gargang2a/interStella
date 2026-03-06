@@ -539,3 +539,10 @@
   - 기존 Client 종료 시 timeout -> slot release 정상
   - 신규 Client 재실행은 라이선싱 초기화 지연이 길면 접속 확인까지 대기 필요
   - 권장: 재실행 후 Host 콘솔에 `Remote connection started`가 찍힐 때까지 1~2분 대기
+
+### 2026-03-07 00:13 (KST)
+- 재접속 검증 중 환경 이슈 기록:
+  - Client 재실행 로그에서 Licensing 단계 타임아웃(60s) 후 code 199 종료
+  - 이 경우 접속 검증 자체가 시작되지 않으므로 네트워크 성공/실패로 판정하지 않음
+- 운영 메모:
+  - 먼저 Client Editor가 정상 진입했는지 확인 후 접속 로그(`Starting session mode=ClientOnly`)를 기준으로 검증 시작

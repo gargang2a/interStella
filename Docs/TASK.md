@@ -413,3 +413,14 @@
 - [ ] reconnect 최종 완료 재확인(동일 세션)
   - 목표 로그: `Assigned client <newId> to slot 1 (PlayerB)`
   - 현상: 재실행 Client가 라이선싱 초기화 단계에서 접속 로그 미출력
+
+### 2026-03-07 00:13 (KST) 진행 스냅샷
+- [x] 문서/브랜치 진행 상태 원격 반영
+  - branch: `codex/host-client-e2e-recheck`
+  - commit: `1474ae6`
+  - push 완료
+- [x] 환경 블로커 원인 분리
+  - Client 재실행 실패 원인: Unity Licensing 초기화 타임아웃(code 199)
+  - 범주: 네트코드 로직 이슈 아님(에디터 실행 환경)
+- [ ] reconnect 최종 완료 재확인
+  - 라이선싱 정상화 후 동일 시나리오 재실행 필요
