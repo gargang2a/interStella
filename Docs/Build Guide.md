@@ -520,3 +520,22 @@
   - PR: #2 (main 대상)
 - 후속 실행:
   - PR 머지 후 Host/Client 2프로세스 검증 체크리스트 실행
+
+### 2026-03-07 00:08 (KST)
+- 2프로세스 재검증 실행 기록(신규):
+  1. Host Play 시작 상태에서 Client(Editor) 실행
+  2. Client 인자:
+     - `-interstella-auto-interact 1`
+     - `-interstella-auto-interact-count 2`
+  3. 성공 로그 확인:
+     - Host: `Remote connection started for Id 1`
+     - Host: `Assigned client 1 to slot 1 (PlayerB)`
+     - Host: `PlayerInteractionNetworkRelay ... committed=True` (2회)
+     - Host: `Delivery accepted. delivered=1/3`
+     - Client: `auto-interact ... successes=2/2`
+  4. 오류 필터 확인:
+     - Host 콘솔 `PacketId`/`unhandled` 검색 결과 0건
+- disconnect/reconnect 체크(부분):
+  - 기존 Client 종료 시 timeout -> slot release 정상
+  - 신규 Client 재실행은 라이선싱 초기화 지연이 길면 접속 확인까지 대기 필요
+  - 권장: 재실행 후 Host 콘솔에 `Remote connection started`가 찍힐 때까지 1~2분 대기

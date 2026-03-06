@@ -397,3 +397,19 @@
   - PR #2: https://github.com/gargang2a/interStella/pull/2
 - [ ] 다음 단계
   - PR #2 리뷰/머지 후 2프로세스 실검증 재실행
+
+### 2026-03-07 00:08 (KST) 진행 스냅샷
+- [x] 2프로세스 Host/Client 재검증(Owner 상호작용)
+  - Host: `Remote connection started for Id 1`
+  - Host: `Assigned client 1 to slot 1 (PlayerB)`
+  - Host: `PlayerInteractionNetworkRelay ... committed=True` (2회)
+  - Host: `[RepairStationObjective] Delivery accepted. delivered=1/3`
+  - Client: `auto-interact attempt ... successes=2/2`
+- [x] durable/transient 오류 필터 점검
+  - Host 콘솔 `PacketId`, `unhandled` 0건
+- [x] disconnect 슬롯 해제 경계 재확인
+  - `Id [1] Address [127.0.0.1] has timed out`
+  - `Released slot 1 from client 1; ownership removed from PlayerB`
+- [ ] reconnect 최종 완료 재확인(동일 세션)
+  - 목표 로그: `Assigned client <newId> to slot 1 (PlayerB)`
+  - 현상: 재실행 Client가 라이선싱 초기화 단계에서 접속 로그 미출력
