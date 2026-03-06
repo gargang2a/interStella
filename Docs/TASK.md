@@ -461,3 +461,11 @@
   - 보조 인스턴스 종료, 기본 에디터 채널 인스턴스만 유지
 - [ ] reconnect 최종 완료 재확인
   - 환경 복구 후 재실행 필요
+
+### 2026-03-07 00:47 (KST) 진행 스냅샷
+- [x] PR 생성
+  - PR #3: https://github.com/gargang2a/interStella/pull/3
+- [x] PR 상태 명시
+  - reconnect 최종 검증은 licensing IPC blocker로 pending
+- [ ] merge 여부 결정
+  - reconnect 완료 로그 확보 후 머지 또는 blocker 명시 상태로 머지 판단
