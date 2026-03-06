@@ -13,6 +13,9 @@ namespace InterStella.Game.Features.Player
         [SerializeField]
         private PlayerFuel _playerFuel;
 
+        [SerializeField]
+        private PlayerNetworkBridge _networkBridge;
+
         [Header("Linear")]
         [SerializeField]
         private float _thrustAcceleration = 8f;
@@ -54,6 +57,11 @@ namespace InterStella.Game.Features.Player
                 _playerFuel = GetComponent<PlayerFuel>();
             }
 
+            if (_networkBridge == null)
+            {
+                _networkBridge = GetComponent<PlayerNetworkBridge>();
+            }
+
             _rigidbody = GetComponent<Rigidbody>();
             _rigidbody.useGravity = false;
             _rigidbody.drag = 0f;
@@ -72,6 +80,11 @@ namespace InterStella.Game.Features.Player
             {
                 _playerFuel = GetComponent<PlayerFuel>();
             }
+
+            if (_networkBridge == null)
+            {
+                _networkBridge = GetComponent<PlayerNetworkBridge>();
+            }
         }
 #endif
 
@@ -79,6 +92,18 @@ namespace InterStella.Game.Features.Player
         {
             if (_inputReader == null || _playerFuel == null)
             {
+                return;
+            }
+
+            if (_networkBridge != null && !_networkBridge.IsAuthoritativeOwner)
+            {
+                CurrentState = new PlayerMotorState(
+                    _rigidbody.velocity,
+                    _rigidbody.angularVelocity,
+                    false,
+                    false,
+                    _playerFuel.IsDepleted,
+                    _isTetherConstrained);
                 return;
             }
 

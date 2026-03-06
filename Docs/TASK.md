@@ -469,3 +469,12 @@
   - reconnect 최종 검증은 licensing IPC blocker로 pending
 - [ ] merge 여부 결정
   - reconnect 완료 로그 확보 후 머지 또는 blocker 명시 상태로 머지 판단
+
+### 2026-03-07 00:58 (KST) 진행 스냅샷
+- [x] Owner/Remote 입력 경계 강화(이중 가드)
+  - 파일: `Assets/Game/Features/Player/PlayerMotor.cs`
+  - 변경: non-owner인 경우 입력 기반 시뮬레이션/연료 소모 경로 차단
+- [x] 스크립트 검증
+  - `PlayerMotor.cs` validate_script 통과
+- [ ] reconnect 최종 완료 재확인
+  - 라이선싱 IPC 블로커 해소 후 재실행
