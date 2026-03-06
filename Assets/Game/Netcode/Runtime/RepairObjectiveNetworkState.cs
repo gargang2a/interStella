@@ -13,9 +13,13 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField, Min(0.02f)]
         private float _syncInterval = 0.1f;
 
+        [SerializeField]
+        private bool _logTransientDeliveryEvents;
+
         private readonly SyncVar<int> _deliveredCountSync = new();
         private float _nextSyncTime;
         private int _lastPublishedDelivered = int.MinValue;
+        private int _lastNotifiedDelivered = int.MinValue;
 
         private void Awake()
         {
@@ -80,6 +84,11 @@ namespace InterStella.Game.Netcode.Runtime
 
             int required = Mathf.Max(0, _repairObjective.RequiredScrapCount);
             int delivered = Mathf.Clamp(_repairObjective.DeliveredCount, 0, required);
+            if (_lastPublishedDelivered != int.MinValue && delivered > _lastPublishedDelivered)
+            {
+                RpcDeliveryAccepted(delivered, required);
+            }
+
             if (!force && delivered == _lastPublishedDelivered)
             {
                 return;
@@ -87,6 +96,26 @@ namespace InterStella.Game.Netcode.Runtime
 
             _deliveredCountSync.Value = delivered;
             _lastPublishedDelivered = delivered;
+        }
+
+        [ObserversRpc]
+        private void RpcDeliveryAccepted(int deliveredCount, int requiredCount)
+        {
+            if (IsServerStarted)
+            {
+                return;
+            }
+
+            if (deliveredCount <= _lastNotifiedDelivered)
+            {
+                return;
+            }
+
+            _lastNotifiedDelivered = deliveredCount;
+            if (_logTransientDeliveryEvents)
+            {
+                Debug.Log($"[RepairObjectiveNetworkState] Delivery event received. delivered={deliveredCount}/{requiredCount}, station={name}");
+            }
         }
 
 #if UNITY_EDITOR
