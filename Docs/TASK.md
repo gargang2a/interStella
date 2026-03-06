@@ -432,3 +432,14 @@
   - `Unity.Licensing.Client` 재기동 후에도 동일 증상
 - [ ] reconnect 최종 완료 재확인
   - 선행조건: Client Editor 라이선싱 정상 진입
+
+### 2026-03-07 00:24 (KST) 진행 스냅샷
+- [x] netcode sequence 공통 비교 유틸 추가
+  - `Assets/Game/Netcode/Runtime/NetworkSequenceComparer.cs`
+- [x] Fuel/Tether sequence 판정 보강
+  - `PlayerFuelNetworkState`: submit dedupe 기준 공통화
+  - `TetherNetworkStateReplicator`: break sequence wrap-around 안전 비교
+- [x] EditMode 테스트 추가 및 통과(6/6)
+  - `NetworkSequenceComparerTests`
+- [ ] reconnect 최종 완료 재확인
+  - Client Editor 라이선싱 블로커(code 199) 해소 후 재시도 필요

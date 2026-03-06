@@ -212,8 +212,7 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             ushort lastSequence = (ushort)_lastAcceptedSubmitSequence;
-            int delta = (submitSequence - lastSequence + 65536) % 65536;
-            return delta > 0 && delta < 32768;
+            return NetworkSequenceComparer.IsNewer(submitSequence, lastSequence);
         }
 
         private float ClampFuel(float currentFuel)
