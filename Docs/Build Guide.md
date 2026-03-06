@@ -603,3 +603,10 @@
   - netcode sequence 보강
   - EditMode 테스트 추가/통과
   - reconnect 검증 블로커 문서화
+
+### 2026-03-07 00:58 (KST)
+- 입력 권한 이중 가드(신규):
+  - 1차: `PlayerOwnershipInputGate`에서 InputReader/Interaction enable 제어
+  - 2차: `PlayerMotor`에서 non-owner 입력 시뮬레이션 차단
+- 회귀 의도:
+  - Owner가 아닌 플레이어가 동일 입력으로 같이 움직이던 경로를 코드 레벨에서 봉쇄
