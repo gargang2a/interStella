@@ -485,3 +485,49 @@
   - 결과: channel not exist/refused -> timeout(code 199)
 - [ ] reconnect 최종 완료 재확인
   - 환경(licensing IPC) 정상화 필요
+
+### 2026-03-07 02:31 (KST) 진행 스냅샷
+- [x] Unity 라이선싱 재진입 경로 복구
+  - client-reconnect-check10-20260307-021055.log 기준 Client Editor가 code 199 없이 정상 진입
+  - FishNetSessionService Starting session mode=ClientOnly + auto-interact 로그 재확인
+- [x] Netcode 컴파일 경고 제거(CS0114)
+  - PlayerFuelNetworkState, RepairObjectiveNetworkState, TetherNetworkStateReplicator의 OnValidate를 protected override로 수정
+- [x] Host 권한 커밋 경계 버그 수정
+  - 파일: Assets/Game/Netcode/Runtime/FishNetAuthorityGateway.cs
+  - 수정: Host(ServerStarted)에서는 검증된 원격 요청을 authoritative commit 가능하도록 변경
+- [x] 재접속 슬롯 경합(race) 버그 수정
+  - 파일: Assets/Game/Netcode/Runtime/FishNetScenePlayerAssigner.cs
+  - 수정: 슬롯 부족 시 pending queue 보관 후, 슬롯 해제 시 자동 재할당
+  - 신규 로그: Queued pending client 2 for next available slot., No available slot for client 2. Queued for reassignment.
+- [x] 실검증 로그 확보(Host Editor.log)
+  - Id [1] ... timed out 이후 Released slot 1 ... 다음에 Assigned client 2 to slot 1 (PlayerB) 확인
+  - 원격 상호작용 커밋 committed=True 및 Delivery accepted. delivered=1/3 케이스 재확인
+- [ ] 후속
+  - interStellaClient 복제 프로젝트와 본 프로젝트 코드 동기화 자동화(검증 일관성용)
+
+### 2026-03-07 02:46 (KST) 원격 rewrite 동기화
+- [x] 원격 상태 재검증
+  - GitHub API 확인: visibility=public, main=cd99e0c (docs: add copilot review instructions)
+  - ruleset 확인: PR Reaview, target=branch, enforcement=active
+- [x] 안전 동기화 수행
+  - 현재 브랜치 백업 생성: codex/licensing-ipc-recovery-pre-sync-20260307-024024
+  - codex/licensing-ipc-recovery를 origin/main 기준으로 rebase
+  - 중복 패치(commit 8b98947)는 upstream 반영 상태로 자동 skip
+- [x] 원격 브랜치 정렬
+  - git push --force-with-lease origin codex/licensing-ipc-recovery 완료
+  - 현재 분기 상태: origin/main 대비 ahead 1 (d3f60e7)
+- [x] PR 상태 재검증
+  - PR #4 head=d3f60e7, base=cd99e0c
+  - mergeable_state=clean
+
+### 2026-03-07 02:46 (KST)
+- force-push rewrite 이후 안전 동기화 체크리스트:
+  1. git status로 미커밋 변경 유무 확인
+  2. git fetch --prune --tags로 원격 ref 갱신
+  3. 작업 브랜치 백업 브랜치 생성
+  4. 최신 origin/main 기준 rebase
+  5. git push --force-with-lease로 원격 브랜치 업데이트
+  6. PR head/base 및 mergeable 상태 재확인
+- 원칙:
+  - rewrite 이후에는 일반 push 대신 --force-with-lease 사용
+  - 미커밋 변경이 있으면 먼저 보존(backup/stash) 후 진행

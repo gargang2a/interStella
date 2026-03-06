@@ -207,7 +207,7 @@ namespace InterStella.Game.Netcode.Runtime
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        protected override void OnValidate()
         {
             ResolveDependenciesIfMissing();
         }

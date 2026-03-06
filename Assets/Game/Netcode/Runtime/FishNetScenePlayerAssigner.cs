@@ -27,6 +27,8 @@ namespace InterStella.Game.Netcode.Runtime
         private bool _logSlotEvents = true;
 
         private readonly Dictionary<int, int> _clientToSlot = new Dictionary<int, int>(4);
+        private readonly Queue<int> _pendingClientQueue = new Queue<int>(4);
+        private readonly HashSet<int> _pendingClientSet = new HashSet<int>();
         private bool _isSubscribed;
 
         private void Awake()
@@ -100,13 +102,20 @@ namespace InterStella.Game.Netcode.Runtime
         {
             if (args.ConnectionState == RemoteConnectionState.Stopped)
             {
+                RemovePendingClient(connection.ClientId);
                 ReleaseSlot(connection.ClientId);
             }
         }
 
         private void AssignSlot(NetworkConnection connection)
         {
+            if (connection == null)
+            {
+                return;
+            }
+
             int clientId = connection.ClientId;
+            RemovePendingClient(clientId);
             if (_clientToSlot.ContainsKey(clientId))
             {
                 if (_logSlotEvents)
@@ -119,7 +128,8 @@ namespace InterStella.Game.Netcode.Runtime
             int slotIndex = GetFirstAvailableSlot();
             if (slotIndex < 0)
             {
-                Debug.LogWarning($"[FishNetScenePlayerAssigner] No available slot for client {clientId}.");
+                EnqueuePendingClient(clientId);
+                Debug.LogWarning($"[FishNetScenePlayerAssigner] No available slot for client {clientId}. Queued for reassignment.");
                 return;
             }
 
@@ -180,6 +190,7 @@ namespace InterStella.Game.Netcode.Runtime
                 {
                     Debug.Log($"[FishNetScenePlayerAssigner] Released slot {slotIndex} from client {clientId} and despawned {scenePlayerObject.name}.");
                 }
+                TryAssignPendingClients();
                 return;
             }
 
@@ -189,6 +200,8 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 Debug.Log($"[FishNetScenePlayerAssigner] Released slot {slotIndex} from client {clientId}; ownership removed from {scenePlayerObject.name}.");
             }
+
+            TryAssignPendingClients();
         }
 
         private void TryForceDropCarriedItem(int slotIndex, int clientId)
@@ -239,6 +252,75 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             return -1;
+        }
+
+        private void EnqueuePendingClient(int clientId)
+        {
+            if (clientId < 0 || _clientToSlot.ContainsKey(clientId))
+            {
+                return;
+            }
+
+            if (!_pendingClientSet.Add(clientId))
+            {
+                return;
+            }
+
+            _pendingClientQueue.Enqueue(clientId);
+            if (_logSlotEvents)
+            {
+                Debug.Log($"[FishNetScenePlayerAssigner] Queued pending client {clientId} for next available slot.");
+            }
+        }
+
+        private void RemovePendingClient(int clientId)
+        {
+            if (clientId < 0)
+            {
+                return;
+            }
+
+            _pendingClientSet.Remove(clientId);
+        }
+
+        private void TryAssignPendingClients()
+        {
+            if (_networkManager == null || _networkManager.ServerManager == null || _pendingClientQueue.Count == 0)
+            {
+                return;
+            }
+
+            int remaining = _pendingClientQueue.Count;
+            while (remaining-- > 0 && _pendingClientQueue.Count > 0)
+            {
+                int pendingClientId = _pendingClientQueue.Dequeue();
+                if (!_pendingClientSet.Contains(pendingClientId))
+                {
+                    continue;
+                }
+
+                if (_clientToSlot.ContainsKey(pendingClientId))
+                {
+                    _pendingClientSet.Remove(pendingClientId);
+                    continue;
+                }
+
+                if (!_networkManager.ServerManager.Clients.TryGetValue(pendingClientId, out NetworkConnection pendingConnection))
+                {
+                    _pendingClientSet.Remove(pendingClientId);
+                    continue;
+                }
+
+                int slotIndex = GetFirstAvailableSlot();
+                if (slotIndex < 0)
+                {
+                    _pendingClientQueue.Enqueue(pendingClientId);
+                    return;
+                }
+
+                _pendingClientSet.Remove(pendingClientId);
+                AssignSlot(pendingConnection);
+            }
         }
 
         private PlayerNetworkBridge GetPlayerBridge(int slotIndex)

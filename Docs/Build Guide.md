@@ -618,3 +618,35 @@
   - `Timed-out after 60.00s ... return code 199`
 - 판정 유지:
   - 네트워크/게임플레이 레이어가 아닌 라이선싱 IPC 블로커
+
+### 2026-03-07 02:31 (KST)
+- Host/Client 재접속 실검증(경합 케이스) 절차 보강:
+  1. Host Play 시작(VerticalSlice_MVP)
+  2. Client A 실행 후 연결 확인
+  3. Client A 강제 종료
+  4. timeout 전에 Client B 즉시 실행
+  5. Host 로그에서 아래 순서 확인
+     - No available slot for client <id>. Queued for reassignment.
+     - Id [<oldId>] ... timed out
+     - Released slot 1 ...
+     - Assigned client <newId> to slot 1 (PlayerB)
+- 권한 커밋 검증 포인트:
+  - Host 로그 PlayerInteractionNetworkRelay ... committed=True
+  - 필요 시 디버그 메뉴로 상호작용 타겟 배치
+    - Tools/InterStella/Debug/Place Scrap_03 In Front Of PlayerB
+    - Tools/InterStella/Debug/Place RepairStation In Front Of PlayerB
+- 라이선싱 운영 메모:
+  - 안정적으로 붙는 경로는 Host Hub 세션 인자(-hubSessionId, -accessToken, -licensingIpc)를 재사용한 Client 실행
+  - 실패 패턴(code 199) 발생 시 editor licensing IPC 충돌 여부를 먼저 확인
+
+### 2026-03-07 02:46 (KST)
+- force-push rewrite 이후 안전 동기화 체크리스트:
+  1. git status로 미커밋 변경 유무 확인
+  2. git fetch --prune --tags로 원격 ref 갱신
+  3. 작업 브랜치 백업 브랜치 생성
+  4. 최신 origin/main 기준 rebase
+  5. git push --force-with-lease로 원격 브랜치 업데이트
+  6. PR head/base 및 mergeable 상태 재확인
+- 원칙:
+  - rewrite 이후에는 일반 push 대신 --force-with-lease 사용
+  - 미커밋 변경이 있으면 먼저 보존(backup/stash) 후 진행
