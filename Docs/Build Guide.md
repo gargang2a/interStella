@@ -473,3 +473,19 @@
      - `auto-workflow.ps1 -Task <task> -Base main -CommitMessage "..." -Push`
 - 보호 동작:
   - Git 저장소가 아니면 스크립트는 즉시 중단(`Current directory is not a Git repository.`)
+
+### 2026-03-06 22:21 (KST)
+- GitHub 초기 푸시 실전 절차(검증 완료):
+  1. 대용량 파일 점검(100MB 초과 파일 제외)
+     - `.gitignore`에 `*.unitypackage` 추가
+  2. 초기 커밋
+     - `git commit -m "chore: bootstrap interStella MVP foundation"`
+  3. 브랜치 정리
+     - `git branch -M main`
+  4. 원격 연결
+     - `git remote add origin https://github.com/gargang2a/interStella.git`
+  5. 첫 푸시
+     - `git push -u origin main`
+  6. 검증
+     - `git rev-parse HEAD` == `git rev-parse origin/main`
+     - 웹 URL: `https://github.com/gargang2a/interStella`

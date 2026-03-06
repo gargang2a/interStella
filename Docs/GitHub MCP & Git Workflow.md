@@ -67,3 +67,16 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-workflow.ps
 - 실제 자동 브랜치/커밋/풀을 사용하려면:
   1. 이 폴더를 Git 저장소로 초기화하거나
   2. Git 저장소를 다시 클론한 경로에서 실행해야 한다.
+
+## 5) 2026-03-06 실전 적용 결과
+- 로컬 상태:
+  - `main` 브랜치, 워킹트리 clean
+  - HEAD: `711deb0a0cc6b574051b12ae795acde5a3fecd05`
+- 원격 상태:
+  - `origin = https://github.com/gargang2a/interStella.git`
+  - `origin/main` SHA 동일 확인
+- 웹 확인:
+  - [interStella Repository](https://github.com/gargang2a/interStella)
+- 이슈/해결:
+  - 첫 푸시 중 타임아웃 발생 가능(대용량 초기 업로드)
+  - 재시도에서 `reference already exists`가 나와도, 원격 SHA가 동일하면 이미 푸시 완료 상태로 판단

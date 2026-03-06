@@ -348,3 +348,16 @@
   - `Docs/GitHub MCP & Git Workflow.md`
 - [ ] Git 저장소 활성화
   - 현재 `C:\Unity\interStella`에 `.git`이 없어 스크립트는 보호 중단 동작
+
+### 2026-03-06 22:21 (KST) 진행 스냅샷
+- [x] Git 저장소 활성화
+  - git init 후 초기 커밋 완료 (711deb0)
+- [x] GitHub 원격 저장소 생성
+  - gargang2a/interStella 생성
+- [x] main 브랜치 푸시 및 추적 설정
+  - main...origin/main 동기화 확인
+- [x] 대용량 파일 푸시 실패 리스크 제거
+  - *.unitypackage ignore 추가
+  - SpaceSkyboxes4K.unitypackage 인덱스 제외
+- [ ] 다음 단계
+  - 자동 브랜치/자동 커밋/자동 풀 스크립트를 실제 기능 작업 브랜치에서 1회 E2E 검증
