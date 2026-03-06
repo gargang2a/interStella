@@ -29,7 +29,7 @@ function Has-Upstream {
 
 Assert-GitRepository
 
-Invoke-Git add -A
+Invoke-Git add --all
 & git diff --cached --quiet
 if ($LASTEXITCODE -eq 0) {
     Write-Output "NO_STAGED_CHANGES"

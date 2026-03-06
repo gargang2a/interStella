@@ -89,3 +89,14 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-workflow.ps
 - 검증:
   - 인증 조회 결과 private=true, isibility=private
   - 비인증 조회는 404(Not Found)로 비공개 정책 정상 동작
+
+## 8) 2026-03-06 22:54 Git 자동 워크플로우 E2E
+- 실행 브랜치:
+  - codex/git-workflow-e2e
+- 검증 순서:
+  1. uto-branch.ps1 -Name git-workflow-e2e -Base main -SyncBase
+  2. 변경 생성(문서 누적 로그)
+  3. uto-commit.ps1 -Message "chore: verify git auto workflow e2e" -Push
+  4. uto-pull.ps1 재검증
+- 기대 결과:
+  - 브랜치 생성/전환, 커밋/푸시, 추적 브랜치 pull 동작이 모두 자동화 스크립트로 완료
