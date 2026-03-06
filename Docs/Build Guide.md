@@ -559,3 +559,16 @@
   - `Unity.Licensing.Client` 재기동 후에도 동일
 - 판정 규칙:
   - 위 패턴 발생 시 네트워크/게임플레이 검증 실패가 아닌 `에디터 런타임 환경 블로커`로 분류
+
+### 2026-03-07 00:24 (KST)
+- sequence 안정성 회귀 테스트(신규):
+  1. `NetworkSequenceComparerTests` 실행(EditMode)
+  2. 기대 결과:
+     - 총 6개 테스트 통과
+     - wrap-around 구간에서 최신/구버전 판정 정확
+- 적용 파일:
+  - `Assets/Game/Netcode/Runtime/NetworkSequenceComparer.cs`
+  - `Assets/Game/Netcode/Runtime/PlayerFuelNetworkState.cs`
+  - `Assets/Game/Netcode/Runtime/TetherNetworkStateReplicator.cs`
+- 테스트 결과:
+  - `passed=6, failed=0, skipped=0`

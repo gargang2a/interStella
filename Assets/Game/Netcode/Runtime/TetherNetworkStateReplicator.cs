@@ -30,6 +30,7 @@ namespace InterStella.Game.Netcode.Runtime
         private byte _lastAppliedTensionLevel = byte.MaxValue;
         private bool _lastAppliedBroken;
         private uint _lastReceivedBreakSequence;
+        private bool _hasReceivedBreakSequence;
 
         private void Awake()
         {
@@ -83,12 +84,13 @@ namespace InterStella.Game.Netcode.Runtime
                 return;
             }
 
-            if (breakSequence <= _lastReceivedBreakSequence)
+            if (_hasReceivedBreakSequence && !NetworkSequenceComparer.IsNewer(breakSequence, _lastReceivedBreakSequence))
             {
                 return;
             }
 
             _lastReceivedBreakSequence = breakSequence;
+            _hasReceivedBreakSequence = true;
             _tetherLink.MarkBroken(currentDistance);
             CacheAppliedState(currentDistance, (byte)TetherTensionLevel.Broken, true);
         }
