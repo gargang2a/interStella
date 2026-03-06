@@ -498,3 +498,25 @@
   4. 완료 브랜치 PR 생성 -> `#1`
 - 수정 사항:
   - `auto-commit.ps1`: `Invoke-Git add -A` -> `Invoke-Git add --all`
+
+### 2026-03-06 23:22 (KST)
+- netcode durable/transient 보강 적용 파일:
+  1. Assets/Game/Netcode/Runtime/PlayerFuelNetworkState.cs
+     - ServerRpc 소유권 요구 강화
+     - submit sequence 기반 stale/duplicate 제출 차단
+  2. Assets/Game/Netcode/Runtime/RepairObjectiveNetworkState.cs
+     - delivery transient ObserversRpc 분리
+     - durable deliveredCount SyncVar와 경계 분리
+  3. Assets/Game/Netcode/Runtime/TetherNetworkStateReplicator.cs
+     - break transient RPC sequence 도입
+     - 중복 break 적용 완화
+- 검증 명세:
+  - Unity MCP validate_script 3개 파일 통과(diagnostics 없음)
+
+### 2026-03-06 23:28 (KST)
+- 브랜치/PR 결과:
+  - branch: codex/netcode-durable-transient-hardening
+  - commit: 7b2bef2
+  - PR: #2 (main 대상)
+- 후속 실행:
+  - PR 머지 후 Host/Client 2프로세스 검증 체크리스트 실행

@@ -25,9 +25,11 @@ namespace InterStella.Game.Netcode.Runtime
         private float _lastDistance;
         private byte _lastTensionLevel;
         private bool _lastBroken;
+        private uint _serverBreakSequence;
         private float _lastAppliedDistance = float.MinValue;
         private byte _lastAppliedTensionLevel = byte.MaxValue;
         private bool _lastAppliedBroken;
+        private uint _lastReceivedBreakSequence;
 
         private void Awake()
         {
@@ -74,14 +76,21 @@ namespace InterStella.Game.Netcode.Runtime
         }
 
         [ObserversRpc]
-        private void RpcTetherBroken(float currentDistance)
+        private void RpcTetherBroken(float currentDistance, uint breakSequence)
         {
             if (IsServerStarted || _tetherLink == null)
             {
                 return;
             }
 
+            if (breakSequence <= _lastReceivedBreakSequence)
+            {
+                return;
+            }
+
+            _lastReceivedBreakSequence = breakSequence;
             _tetherLink.MarkBroken(currentDistance);
+            CacheAppliedState(currentDistance, (byte)TetherTensionLevel.Broken, true);
         }
 
         private void HandleDistanceChanged(float previous, float next, bool asServer)
@@ -165,7 +174,8 @@ namespace InterStella.Game.Netcode.Runtime
 
             if (!_lastBroken && broken)
             {
-                RpcTetherBroken(distance);
+                _serverBreakSequence++;
+                RpcTetherBroken(distance, _serverBreakSequence);
             }
 
             _distanceSync.Value = distance;
