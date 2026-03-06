@@ -546,3 +546,16 @@
   - 이 경우 접속 검증 자체가 시작되지 않으므로 네트워크 성공/실패로 판정하지 않음
 - 운영 메모:
   - 먼저 Client Editor가 정상 진입했는지 확인 후 접속 로그(`Starting session mode=ClientOnly`)를 기준으로 검증 시작
+
+### 2026-03-07 00:16 (KST)
+- reconnect 최종 검증 실패 케이스(신규):
+  - 로그 파일:
+    - `Logs/client-reconnect-check1-20260307-000832.log`
+    - `Logs/client-reconnect-check2-20260307-001023.log`
+  - 실패 패턴:
+    - `Timed-out after 60.00s, waiting for channel: "LicenseClient-gar"`
+    - `Application will terminate with return code 199`
+- 조치 결과:
+  - `Unity.Licensing.Client` 재기동 후에도 동일
+- 판정 규칙:
+  - 위 패턴 발생 시 네트워크/게임플레이 검증 실패가 아닌 `에디터 런타임 환경 블로커`로 분류
