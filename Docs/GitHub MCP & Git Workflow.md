@@ -80,3 +80,12 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-workflow.ps
 - 이슈/해결:
   - 첫 푸시 중 타임아웃 발생 가능(대용량 초기 업로드)
   - 재시도에서 `reference already exists`가 나와도, 원격 SHA가 동일하면 이미 푸시 완료 상태로 판단
+
+## 7) 2026-03-06 저장소 가시성 전환
+- 대상 저장소:
+  - gargang2a/interStella
+- 변경 내용:
+  - public -> private
+- 검증:
+  - 인증 조회 결과 private=true, isibility=private
+  - 비인증 조회는 404(Not Found)로 비공개 정책 정상 동작
