@@ -43,3 +43,7 @@ Thumbs.db
 # Local third-party asset drop zone
 Assets/ThirdParty/
 Assets/ThirdParty.meta
+
+# Local incoming asset staging area
+Assets/Game/Art/Incoming/
+Assets/Game/Art/Incoming.meta
