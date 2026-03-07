@@ -844,3 +844,28 @@ Gate 판정:
 현재 Go/No-Go:
 - GO (Steam 로비/초대/릴레이 통합 착수 가능)
 - 권장: Steam 통합 중 사용자 장시간 체감 라운드(멀미/피로)는 별도 회차로 추가 기록
+
+### 2026-03-07 21:12 (KST)
+## Steam 세션 부트스트랩 입력 가이드 (준비 단계)
+대상 파일:
+- `Assets/Game/Netcode/Runtime/FishNetSessionService.cs`
+
+신규 런타임 입력:
+- provider:
+  - CLI: `-interstella-provider direct|steam`
+  - ENV: `INTERSTELLA_PROVIDER=direct|steam`
+- steam lobby id:
+  - CLI: `-interstella-lobby-id <lobbyId>`
+  - ENV: `INTERSTELLA_STEAM_LOBBY_ID=<lobbyId>`
+- steam host id:
+  - CLI: `-interstella-steam-host-id <steamId>`
+  - ENV: `INTERSTELLA_STEAM_HOST_ID=<steamId>`
+
+현재 동작(명시적):
+- `Direct`: 기존 FishNet direct endpoint(`address/port`)로 세션 시작
+- `SteamRelay`: 경고 로그 출력
+  - 기본값 `_allowSteamFallbackToDirect=false`이면 시작 차단
+  - `_allowSteamFallbackToDirect=true`이면 direct fallback 허용(경고 로그 출력)
+
+검증 로그 기준:
+- `[FishNetSessionService] Starting session provider=Direct, mode=Host, address=127.0.0.1, port=7770.`

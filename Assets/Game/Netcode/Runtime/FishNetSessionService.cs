@@ -6,6 +6,12 @@ namespace InterStella.Game.Netcode.Runtime
 {
     public sealed class FishNetSessionService : MonoBehaviour, ISessionService
     {
+        private enum ConnectionProvider
+        {
+            Direct = 0,
+            SteamRelay = 1
+        }
+
         private enum StartupMode
         {
             Host = 0,
@@ -25,6 +31,19 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField]
         private ushort _port = 7770;
 
+        [Header("Connection Provider")]
+        [SerializeField]
+        private ConnectionProvider _connectionProvider = ConnectionProvider.Direct;
+
+        [SerializeField]
+        private string _steamLobbyId = string.Empty;
+
+        [SerializeField]
+        private string _steamHostId = string.Empty;
+
+        [SerializeField]
+        private bool _allowSteamFallbackToDirect = false;
+
         [Header("Runtime Override")]
         [SerializeField]
         private bool _allowRuntimeOverride = true;
@@ -37,6 +56,15 @@ namespace InterStella.Game.Netcode.Runtime
 
         [SerializeField]
         private string _portArgument = "interstella-port";
+
+        [SerializeField]
+        private string _providerArgument = "interstella-provider";
+
+        [SerializeField]
+        private string _lobbyIdArgument = "interstella-lobby-id";
+
+        [SerializeField]
+        private string _steamHostIdArgument = "interstella-steam-host-id";
 
         public bool IsSessionActive
         {
@@ -76,7 +104,19 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             ApplyRuntimeOverrides();
-            Debug.Log($"[FishNetSessionService] Starting session mode={_startupMode}, address={_clientAddress}, port={_port}.");
+            if (_connectionProvider == ConnectionProvider.SteamRelay)
+            {
+                Debug.LogWarning($"[FishNetSessionService] Steam relay bootstrap requested. lobbyId={_steamLobbyId}, hostId={_steamHostId}. Steam transport wiring is not implemented yet.");
+                if (!_allowSteamFallbackToDirect)
+                {
+                    Debug.LogWarning("[FishNetSessionService] Session start blocked because SteamRelay is selected and direct fallback is disabled.");
+                    return false;
+                }
+
+                Debug.LogWarning("[FishNetSessionService] Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled.");
+            }
+
+            Debug.Log($"[FishNetSessionService] Starting session provider={_connectionProvider}, mode={_startupMode}, address={_clientAddress}, port={_port}.");
 
             switch (_startupMode)
             {
@@ -140,6 +180,24 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 _port = runtimePort;
             }
+
+            string providerValue = ReadRuntimeOverride(_providerArgument, "INTERSTELLA_PROVIDER");
+            if (!string.IsNullOrWhiteSpace(providerValue) && TryParseConnectionProvider(providerValue, out ConnectionProvider provider))
+            {
+                _connectionProvider = provider;
+            }
+
+            string lobbyIdValue = ReadRuntimeOverride(_lobbyIdArgument, "INTERSTELLA_STEAM_LOBBY_ID");
+            if (!string.IsNullOrWhiteSpace(lobbyIdValue))
+            {
+                _steamLobbyId = lobbyIdValue.Trim();
+            }
+
+            string steamHostIdValue = ReadRuntimeOverride(_steamHostIdArgument, "INTERSTELLA_STEAM_HOST_ID");
+            if (!string.IsNullOrWhiteSpace(steamHostIdValue))
+            {
+                _steamHostId = steamHostIdValue.Trim();
+            }
         }
 
         private static bool TryParseStartupMode(string rawValue, out StartupMode mode)
@@ -165,6 +223,28 @@ namespace InterStella.Game.Netcode.Runtime
                     return true;
                 default:
                     mode = StartupMode.Host;
+                    return false;
+            }
+        }
+
+        private static bool TryParseConnectionProvider(string rawValue, out ConnectionProvider provider)
+        {
+            string normalized = rawValue.Trim().ToLowerInvariant();
+            switch (normalized)
+            {
+                case "direct":
+                case "ip":
+                case "socket":
+                    provider = ConnectionProvider.Direct;
+                    return true;
+                case "steam":
+                case "steamrelay":
+                case "steam-relay":
+                case "relay":
+                    provider = ConnectionProvider.SteamRelay;
+                    return true;
+                default:
+                    provider = ConnectionProvider.Direct;
                     return false;
             }
         }

@@ -697,3 +697,20 @@
   - Gate 1~5 전체 PASS -> Steam 통합 착수 가능 상태
 - [ ] 후속(권장)
   - 사용자 장시간 체감 라운드(멀미/조작 피로) 1회 추가 기록
+
+### 2026-03-07 21:12 (KST) 진행 스냅샷
+- [x] Steam 통합 준비용 세션 부트스트랩 경계 추가
+  - 파일: `Assets/Game/Netcode/Runtime/FishNetSessionService.cs`
+  - `ConnectionProvider` 추가: `Direct`, `SteamRelay`
+  - 런타임 인자/환경변수 파싱 추가:
+    - `-interstella-provider` / `INTERSTELLA_PROVIDER`
+    - `-interstella-lobby-id` / `INTERSTELLA_STEAM_LOBBY_ID`
+    - `-interstella-steam-host-id` / `INTERSTELLA_STEAM_HOST_ID`
+- [x] 명시적 비지원 처리 반영
+  - 현재 `SteamRelay` 선택 시 실제 Steam transport wiring 미구현 상태를 경고 로그로 명시
+  - `_allowSteamFallbackToDirect=false`면 세션 시작 차단(침묵 fallback 금지)
+- [x] 검증
+  - `validate_script`: `FishNetSessionService.cs` errors/warnings 0
+  - PlayMode 로그: `[FishNetSessionService] Starting session provider=Direct, mode=Host, address=127.0.0.1, port=7770.`
+- [ ] 다음 단계
+  - Steam lobby/초대/릴레이 실제 어댑터(`ISessionService` 교체 가능 구조) 구현
