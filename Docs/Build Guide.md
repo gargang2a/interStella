@@ -718,3 +718,13 @@
   - PR 코멘트 1개를 marker 기준 upsert
 - 주의:
   - `pull_request` 워크플로우는 base(main)에 머지된 이후부터 안정적으로 전 PR에서 동작
+
+### 2026-03-07 19:16 (KST)
+- PR Guardrails Review 운영 검증 완료:
+  1. PR #9에서 신규 워크플로우 최초 실행/성공
+  2. main 반영 후 PR #8에서 재실행/성공
+- 확인 포인트:
+  - Actions run success
+  - PR Conversation에 marker 코멘트 upsert
+- 결론:
+  - Free 플랜 환경에서도 PR 자동 리뷰 코멘트 경로 확보
