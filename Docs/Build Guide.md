@@ -666,3 +666,11 @@
 ### 2026-03-07 03:19 (KST)
 - 워크플로우 인덱스 문서:
   - `.codex/workflows/README.md`
+
+### 2026-03-07 03:36 (KST)
+- 신규 통합 워크플로우:
+  - `powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1`
+- 옵션:
+  - 재시도: `-RegressionMaxAttempts 3 -RetryDelaySec 10`
+- 운영 메모:
+  - Host가 UDP 7770을 열지 않은 상태면 래퍼가 즉시 실패 처리

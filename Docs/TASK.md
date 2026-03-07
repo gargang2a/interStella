@@ -556,3 +556,16 @@
 - [x] `.codex/workflows` 루트 인덱스 문서 추가
   - `.codex/workflows/README.md`
   - Git/Client Sync/Netcode Regression 스크립트 경로 통합 안내
+
+### 2026-03-07 03:36 (KST) 진행 스냅샷
+- [x] one-command E2E 래퍼 추가
+  - `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
+  - 기능: `client sync -> reconnect regression` 순차 실행
+- [x] 래퍼 안정성 보강
+  - Host preflight: UDP 7770 listening 체크 (미충족 시 즉시 실패)
+  - regression 재시도 옵션: `-RegressionMaxAttempts`, `-RetryDelaySec`
+- [x] 실제 실행 검증
+  - 명령: `run-e2e-sync-regression.ps1 -RegressionMaxAttempts 3 -RetryDelaySec 10`
+  - 결과: `E2E_SYNC_REGRESSION_PASS`
+  - summary: `Logs/reconnect-regression-summary-20260307-033146.json`
+  - releasedClientId=1, reassignedClientId=2

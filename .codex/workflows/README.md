@@ -18,5 +18,6 @@ See: `.codex/workflows/client/README.md`
 
 ## Netcode Regression
 - `.codex/workflows/netcode/run-reconnect-regression.ps1`
+- `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
 
 See: `.codex/workflows/netcode/README.md`

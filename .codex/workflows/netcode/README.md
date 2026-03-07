@@ -19,6 +19,17 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnec
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1 -ClientBootTimeoutSec 360
 ```
 
+One-command workflow (sync + reconnect regression):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1
+
+# Retry reconnect regression on transient startup failures
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 -RegressionMaxAttempts 3 -RetryDelaySec 10
+```
+
+The wrapper fails fast if host is not listening on UDP `7770`.
+
 Prerequisites:
 - Host Unity editor for `C:\Unity\interStella` is running and already in Play mode.
 - `C:\Unity\interStellaClient` exists.
