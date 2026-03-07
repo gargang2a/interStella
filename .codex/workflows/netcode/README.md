@@ -18,8 +18,22 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnec
 # Optional: include reconnect-side interaction/repair checks after reassignment
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1 -ReconnectAutoInteractCount 1
 
+# Stabilize reconnect-side auto-interact when reassignment is slower
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1 `
+  -ReconnectAutoInteractCount 1 `
+  -ReconnectAutoInteractMaxAttempts 120 `
+  -ReconnectAutoInteractInitialDelaySec 10 `
+  -ReconnectAutoInteractIntervalSec 0.5 `
+  -UseSteamBootstrap `
+  -StrictSteamRelay
+
 # Slower machines: extend boot timeout
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1 -ClientBootTimeoutSec 360
+
+# Retry client startup inside reconnect workflow (ConnectionFailed/timeout/exited)
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1 `
+  -StartupRetryMaxAttempts 3 `
+  -StartupRetryDelaySec 10
 ```
 
 One-command workflow (sync + reconnect regression):
@@ -30,8 +44,19 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync
 # Retry reconnect regression on transient startup failures
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 -RegressionMaxAttempts 3 -RetryDelaySec 10
 
+# Retry client startup inside interaction/reconnect phases
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 `
+  -StartupRetryMaxAttempts 3 `
+  -StartupRetryDelaySec 10
+
 # Steam strict end-to-end (sync -> interaction strict -> reconnect)
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 -UseSteamBootstrap -StrictSteamRelay
+
+# End-to-end with reconnect auto-interact verification enabled
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 `
+  -UseSteamBootstrap `
+  -StrictSteamRelay `
+  -ReconnectAutoInteractCount 1
 ```
 
 The wrapper fails fast if host is not listening on UDP `7770`.
@@ -43,6 +68,11 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interact
 
 # Increase post-interaction wait when scene/network is slower
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1 -PostInteractWaitSec 40 -AutoInteractCount 2
+
+# Retry client startup inside interaction workflow
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1 `
+  -StartupRetryMaxAttempts 3 `
+  -StartupRetryDelaySec 10
 ```
 
 Steam relay binder smoke (client bootstrap path):

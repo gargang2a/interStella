@@ -11,7 +11,9 @@ param(
     [switch]$StrictSteamRelay,
     [string]$SteamInviteLobbyId = "local-regression",
     [string]$SteamInviteHostId = "127.0.0.1:7770",
-    [switch]$KeepClientRunning
+    [switch]$KeepClientRunning,
+    [int]$StartupRetryMaxAttempts = 2,
+    [int]$StartupRetryDelaySec = 8
 )
 
 $ErrorActionPreference = "Stop"
@@ -158,6 +160,24 @@ function Wait-ClientReady {
     }
 }
 
+function Get-AttemptLogPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BaseLogPath,
+        [Parameter(Mandatory = $true)]
+        [int]$Attempt
+    )
+
+    if ($Attempt -le 1) {
+        return $BaseLogPath
+    }
+
+    $directory = [System.IO.Path]::GetDirectoryName($BaseLogPath)
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($BaseLogPath)
+    $extension = [System.IO.Path]::GetExtension($BaseLogPath)
+    return [System.IO.Path]::Combine($directory, "$baseName-attempt$Attempt$extension")
+}
+
 function Start-InteractionClient {
     param(
         [Parameter(Mandatory = $true)]
@@ -214,6 +234,85 @@ function Start-InteractionClient {
     return Start-Process -FilePath $UnityPath -ArgumentList $arguments -PassThru
 }
 
+function Start-InteractionClientWithRetry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$UnityPath,
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectPath,
+        [Parameter(Mandatory = $true)]
+        [string]$HubSessionId,
+        [Parameter(Mandatory = $true)]
+        [string]$AccessToken,
+        [Parameter(Mandatory = $true)]
+        [string]$BaseLogPath,
+        [Parameter(Mandatory = $true)]
+        [int]$InteractCount,
+        [int]$ClientReadyTimeoutSec = 90,
+        [int]$MaxAttempts = 1,
+        [int]$RetryDelaySec = 2,
+        [bool]$UseSteamBootstrap = $false,
+        [bool]$StrictSteamRelay = $false,
+        [string]$InviteLobbyId = "",
+        [string]$InviteHostId = ""
+    )
+
+    $attemptLimit = [Math]::Max(1, $MaxAttempts)
+    $retryDelay = [Math]::Max(1, $RetryDelaySec)
+    for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
+        $attemptLogPath = Get-AttemptLogPath -BaseLogPath $BaseLogPath -Attempt $attempt
+        $process = Start-InteractionClient `
+            -UnityPath $UnityPath `
+            -ProjectPath $ProjectPath `
+            -HubSessionId $HubSessionId `
+            -AccessToken $AccessToken `
+            -LogPath $attemptLogPath `
+            -InteractCount $InteractCount `
+            -UseSteamBootstrap $UseSteamBootstrap `
+            -StrictSteamRelay $StrictSteamRelay `
+            -InviteLobbyId $InviteLobbyId `
+            -InviteHostId $InviteHostId
+        $readyResult = Wait-ClientReady -LogPath $attemptLogPath -ClientProcess $process -TimeoutSec $ClientReadyTimeoutSec
+        if ($readyResult.Ready) {
+            return @{
+                Ready = $true
+                Process = $process
+                LogPath = $attemptLogPath
+                Reason = $readyResult.Reason
+                AttemptsUsed = $attempt
+            }
+        }
+
+        $process.Refresh()
+        if (-not $process.HasExited) {
+            Stop-Process -Id $process.Id -Force
+        }
+
+        $retryableFailure = $readyResult.Reason -eq "ClientStartupFailed" `
+            -or $readyResult.Reason -eq "ClientStartupTimeout" `
+            -or $readyResult.Reason -eq "ClientProcessExited"
+        if (-not $retryableFailure -or $attempt -ge $attemptLimit) {
+            return @{
+                Ready = $false
+                Process = $process
+                LogPath = $attemptLogPath
+                Reason = $readyResult.Reason
+                AttemptsUsed = $attempt
+            }
+        }
+
+        Start-Sleep -Seconds $retryDelay
+    }
+
+    return @{
+        Ready = $false
+        Process = $null
+        LogPath = $BaseLogPath
+        Reason = "ClientStartupUnknown"
+        AttemptsUsed = $attemptLimit
+    }
+}
+
 function Parse-OwnerBoundaryPass {
     param([string]$HostLogDelta)
 
@@ -258,23 +357,31 @@ $summaryPath = Join-Path $LogDirectory "interaction-regression-summary-$stamp.js
 $client = $null
 $summary = $null
 $exceptionMessage = ""
+$clientStartupAttemptsUsed = 0
+$clientStartupLastReason = ""
 
 try {
-    $client = Start-InteractionClient `
+    $clientStartResult = Start-InteractionClientWithRetry `
         -UnityPath $UnityEditorPath `
         -ProjectPath $ClientProjectPath `
         -HubSessionId $hubSessionId `
         -AccessToken $accessToken `
-        -LogPath $clientLog `
+        -BaseLogPath $clientLog `
         -InteractCount $AutoInteractCount `
+        -ClientReadyTimeoutSec $ClientBootTimeoutSec `
+        -MaxAttempts $StartupRetryMaxAttempts `
+        -RetryDelaySec $StartupRetryDelaySec `
         -UseSteamBootstrap $UseSteamBootstrap `
         -StrictSteamRelay $StrictSteamRelay `
         -InviteLobbyId $SteamInviteLobbyId `
         -InviteHostId $SteamInviteHostId
 
-    $clientReady = Wait-ClientReady -LogPath $clientLog -ClientProcess $client -TimeoutSec $ClientBootTimeoutSec
-    if (-not $clientReady.Ready) {
-        throw "Interaction client failed to become ready. Reason=$($clientReady.Reason) Log=$clientLog"
+    $client = $clientStartResult.Process
+    $clientLog = $clientStartResult.LogPath
+    $clientStartupAttemptsUsed = $clientStartResult.AttemptsUsed
+    $clientStartupLastReason = $clientStartResult.Reason
+    if (-not $clientStartResult.Ready) {
+        throw "Interaction client failed to become ready. Reason=$($clientStartResult.Reason) Attempts=$($clientStartResult.AttemptsUsed) Log=$clientLog"
     }
 
     Start-Sleep -Seconds $PostInteractWaitSec
@@ -407,6 +514,10 @@ try {
         autoInteractTarget = [Math]::Max(1, $AutoInteractCount)
         useSteamBootstrap = [bool]$UseSteamBootstrap
         strictSteamRelay = [bool]$StrictSteamRelay
+        clientStartupRetryMaxAttempts = [Math]::Max(1, $StartupRetryMaxAttempts)
+        clientStartupRetryDelaySec = [Math]::Max(1, $StartupRetryDelaySec)
+        clientStartupAttemptsUsed = $clientStartupAttemptsUsed
+        clientStartupLastReason = $clientStartupLastReason
         steamInviteLobbyId = $SteamInviteLobbyId
         steamInviteHostId = $SteamInviteHostId
         steamBootstrapAppliedInClient = $steamBootstrapAppliedInClient
@@ -424,6 +535,10 @@ catch {
         timestamp = (Get-Date).ToString("s")
         passed = $false
         exception = $exceptionMessage
+        clientStartupRetryMaxAttempts = [Math]::Max(1, $StartupRetryMaxAttempts)
+        clientStartupRetryDelaySec = [Math]::Max(1, $StartupRetryDelaySec)
+        clientStartupAttemptsUsed = $clientStartupAttemptsUsed
+        clientStartupLastReason = $clientStartupLastReason
         clientLog = $clientLog
         hostEditorLog = $HostEditorLogPath
     }

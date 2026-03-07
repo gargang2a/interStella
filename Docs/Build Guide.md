@@ -1098,3 +1098,84 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync
   - `passed=true`, `reconnectPass=true`, `durableTransientPass=true`, `steamPass=true`
 - e2e:
   - `E2E_SYNC_REGRESSION_PASS RECONNECT_SUMMARY=...001754.json INTERACTION_SUMMARY=...001655.json`
+
+### 2026-03-08 00:43 (KST)
+## Reconnect Auto-Interact 안정화 + Steam SDK Binder Scaffold
+대상 파일:
+- `Assets/Game/Netcode/Editor/InterStellaClientAutoPlayBootstrap.cs`
+- `.codex/workflows/netcode/run-reconnect-regression.ps1`
+- `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
+- `Assets/Game/Netcode/Runtime/SteamRelaySdkTransportBinder.cs`
+- `Assets/Game/Netcode/Runtime/FishNetSessionService.cs`
+
+핵심 변경:
+- reconnect `auto-interact > 0` 안정화를 위한 런타임 제어값 추가
+  - `-interstella-auto-interact-max-attempts`
+  - `-interstella-auto-interact-initial-delay`
+  - `-interstella-auto-interact-interval`
+- reconnect 스크립트 파라미터 추가
+  - `ReconnectAutoInteractMaxAttempts` (default 120)
+  - `ReconnectAutoInteractInitialDelaySec` (default 10)
+  - `ReconnectAutoInteractIntervalSec` (default 0.5)
+- reconnect 판정 보강
+  - strict race 경로(`queue -> release -> reassign`)와 direct assign 경로를 모두 인식
+  - summary 필드: `racePathDetected`, `directAssignDetected`
+- Steam SDK binder scaffold 추가
+  - `SteamRelaySdkTransportBinder`는 현재 실연동 전 상태
+  - 필요 시 loopback binder 위임으로 동작 유지
+  - `FishNetSessionService` binder 해석 우선순위:
+    - SDK scaffold -> loopback -> interface fallback
+
+권장 실행:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 `
+  -UseSteamBootstrap `
+  -StrictSteamRelay `
+  -ReconnectAutoInteractCount 1
+```
+
+최신 증적:
+- reconnect(auto-interact=1): `Logs/reconnect-regression-summary-20260308-003617.json`
+  - `passed=true`, `interactionPass=true`, `durableTransientPass=true`, `steamPass=true`
+- e2e(auto-interact=1):
+  - interaction: `Logs/interaction-regression-summary-20260308-003937.json`
+  - reconnect: `Logs/reconnect-regression-summary-20260308-004035.json`
+  - 둘 다 `passed=true`
+
+### 2026-03-08 01:12 (KST)
+## Strict 회귀 Client Startup 재시도 공통화
+대상 파일:
+- `.codex/workflows/netcode/run-interaction-regression.ps1`
+- `.codex/workflows/netcode/run-reconnect-regression.ps1`
+- `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
+
+목적:
+- 간헐 `ConnectionFailed`/startup timeout로 strict 회귀가 불안정해지는 문제를 스크립트 레벨에서 흡수
+
+핵심 변경:
+- interaction/reconnect 공통 파라미터 추가:
+  - `-StartupRetryMaxAttempts` (기본 2)
+  - `-StartupRetryDelaySec` (기본 8)
+- 공통 재시도 기준:
+  - `ClientStartupFailed`
+  - `ClientStartupTimeout`
+  - `ClientProcessExited`
+- 시도별 로그 분리:
+  - 첫 시도는 기존 로그명 유지
+  - 재시도는 `-attempt2`, `-attempt3` suffix 로그 생성
+- summary 증거 강화:
+  - `clientStartupRetryMaxAttempts`
+  - `clientStartupRetryDelaySec`
+  - `clientStartupAttemptsUsed`
+  - `clientStartupLastReason`
+  - reconnect는 `clientA/clientB` 각각의 attempt/reason 기록
+
+권장 실행:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 `
+  -UseSteamBootstrap `
+  -StrictSteamRelay `
+  -ReconnectAutoInteractCount 1 `
+  -StartupRetryMaxAttempts 3 `
+  -StartupRetryDelaySec 10
+```

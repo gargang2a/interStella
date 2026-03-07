@@ -9,6 +9,11 @@ param(
     [int]$InteractionPostWaitSec = 40,
     [int]$InteractionAutoInteractCount = 2,
     [int]$ReconnectAutoInteractCount = 0,
+    [int]$ReconnectAutoInteractMaxAttempts = 120,
+    [double]$ReconnectAutoInteractInitialDelaySec = 10.0,
+    [double]$ReconnectAutoInteractIntervalSec = 0.5,
+    [int]$StartupRetryMaxAttempts = 2,
+    [int]$StartupRetryDelaySec = 8,
     [bool]$RunInteractionRegression = $true,
     [int]$PostReconnectWaitSec = 95,
     [int]$RegressionMaxAttempts = 2,
@@ -79,6 +84,11 @@ $regressionArgs = @{
     ClientBootTimeoutSec = $ClientBootTimeoutSec
     PostReconnectWaitSec = $PostReconnectWaitSec
     ReconnectAutoInteractCount = $ReconnectAutoInteractCount
+    ReconnectAutoInteractMaxAttempts = $ReconnectAutoInteractMaxAttempts
+    ReconnectAutoInteractInitialDelaySec = $ReconnectAutoInteractInitialDelaySec
+    ReconnectAutoInteractIntervalSec = $ReconnectAutoInteractIntervalSec
+    StartupRetryMaxAttempts = $StartupRetryMaxAttempts
+    StartupRetryDelaySec = $StartupRetryDelaySec
 }
 
 if (-not [string]::IsNullOrWhiteSpace($HostEditorLogPath)) {
@@ -114,6 +124,8 @@ if ($RunInteractionRegression) {
         ClientBootTimeoutSec = $ClientBootTimeoutSec
         PostInteractWaitSec = $InteractionPostWaitSec
         AutoInteractCount = $InteractionAutoInteractCount
+        StartupRetryMaxAttempts = $StartupRetryMaxAttempts
+        StartupRetryDelaySec = $StartupRetryDelaySec
     }
 
     if (-not [string]::IsNullOrWhiteSpace($HostEditorLogPath)) {

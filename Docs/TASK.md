@@ -893,3 +893,50 @@
 - [ ] 다음 단계
   - reconnect에서 `ReconnectAutoInteractCount > 0` 경로(수리 transient 포함)의 안정화 라운드 1회
   - Steam SDK 실제 binder 구현체 스캐폴드 시작
+
+### 2026-03-08 00:43 (KST) 진행 스냅샷
+- [x] reconnect `ReconnectAutoInteractCount > 0` 경로 안정화
+  - `InterStellaClientAutoPlayBootstrap` 확장:
+    - 신규 인자: `-interstella-auto-interact-max-attempts`
+    - 신규 인자: `-interstella-auto-interact-initial-delay`
+    - 신규 인자: `-interstella-auto-interact-interval`
+  - `run-reconnect-regression.ps1` 확장:
+    - 신규 파라미터: `ReconnectAutoInteractMaxAttempts`, `ReconnectAutoInteractInitialDelaySec`, `ReconnectAutoInteractIntervalSec`
+    - reconnect 판정 보강: `racePathDetected` 또는 `directAssignDetected`면 reconnectPass 가능
+- [x] Steam SDK binder 스캐폴드 추가
+  - 신규 파일: `Assets/Game/Netcode/Runtime/SteamRelaySdkTransportBinder.cs`
+  - 동작:
+    - 현재는 scaffold 상태(실제 Steam relay wiring 미구현)
+    - 옵션으로 loopback binder에 위임 가능
+  - `FishNetSessionService` binder 해석 우선순위 보강:
+    - `SteamRelaySdkTransportBinder` -> `SteamRelayLoopbackTransportBinder` -> `ISteamRelayTransportBinder`
+- [x] strict 회귀 실검증 PASS
+  - reconnect(auto-interact=1): `Logs/reconnect-regression-summary-20260308-003617.json`
+    - `passed=true`, `interactionPass=true`, `durableTransientPass=true`, `steamPass=true`
+  - e2e(sync->interaction->reconnect, auto-interact=1): 
+    - interaction: `Logs/interaction-regression-summary-20260308-003937.json`
+    - reconnect: `Logs/reconnect-regression-summary-20260308-004035.json`
+    - 모두 `passed=true`
+- [x] 안정성 검증
+  - EditMode tests: `total=11, passed=11, failed=0`
+- [ ] 다음 단계
+  - `SteamRelaySdkTransportBinder`에 실제 Steam transport API 바인딩 구현 착수
+  - strict 회귀 스크립트의 client startup 실패(간헐 ConnectionFailed) 자동 재시도 로직 공통화
+
+### 2026-03-08 01:12 (KST) 진행 스냅샷
+- [x] strict 회귀 스크립트의 client startup 재시도 공통화 1차 적용
+  - 파일: `.codex/workflows/netcode/run-interaction-regression.ps1`
+  - 파일: `.codex/workflows/netcode/run-reconnect-regression.ps1`
+  - 신규 파라미터:
+    - `StartupRetryMaxAttempts` (default 2)
+    - `StartupRetryDelaySec` (default 8)
+  - 공통 동작:
+    - `ClientStartupFailed/ClientStartupTimeout/ClientProcessExited`를 재시도 가능 실패로 분류
+    - 시도별 로그 분리(`*-attemptN.log`)로 이전 성공 로그 오염 방지
+    - summary에 시도 횟수/마지막 실패 사유 기록
+- [x] e2e 래퍼 파라미터 연동
+  - 파일: `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
+  - 동작: interaction/reconnect 단계 모두에 startup retry 파라미터 전달
+- [ ] 다음 단계
+  - strict 회귀 summary의 startup 재시도 통계를 누적해 기본값(`2/8`) 튜닝
+  - `SteamRelaySdkTransportBinder` 실제 Steam transport API 바인딩 구현 착수

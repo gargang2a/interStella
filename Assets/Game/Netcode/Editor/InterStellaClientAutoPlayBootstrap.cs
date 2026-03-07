@@ -12,17 +12,29 @@ namespace InterStella.EditorTools
         private const string VERTICAL_SLICE_SCENE_PATH = "Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity";
         private const string AUTO_INTERACT_ARGUMENT = "interstella-auto-interact";
         private const string AUTO_INTERACT_COUNT_ARGUMENT = "interstella-auto-interact-count";
+        private const string AUTO_INTERACT_MAX_ATTEMPTS_ARGUMENT = "interstella-auto-interact-max-attempts";
+        private const string AUTO_INTERACT_INITIAL_DELAY_ARGUMENT = "interstella-auto-interact-initial-delay";
+        private const string AUTO_INTERACT_INTERVAL_ARGUMENT = "interstella-auto-interact-interval";
         private const string AUTO_INTERACT_SESSION_KEY = "interstella.client.autoInteractRequested";
         private const string AUTO_INTERACT_COUNT_SESSION_KEY = "interstella.client.autoInteractSuccessTarget";
+        private const string AUTO_INTERACT_MAX_ATTEMPTS_SESSION_KEY = "interstella.client.autoInteractMaxAttempts";
+        private const string AUTO_INTERACT_INITIAL_DELAY_SESSION_KEY = "interstella.client.autoInteractInitialDelaySec";
+        private const string AUTO_INTERACT_INTERVAL_SESSION_KEY = "interstella.client.autoInteractIntervalSec";
         private const int MAX_AUTO_INTERACT_ATTEMPTS = 24;
+        private const int MAX_AUTO_INTERACT_ATTEMPTS_LIMIT = 240;
         private const int DEFAULT_AUTO_INTERACT_SUCCESS_TARGET = 1;
         private const int MAX_AUTO_INTERACT_SUCCESS_TARGET = 8;
-        private const float AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS = 0.5f;
-
+        private const float DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS = 1.25f;
+        private const float DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS = 0.5f;
+        private const float MIN_AUTO_INTERACT_INTERVAL_SECONDS = 0.1f;
+        private const float MAX_AUTO_INTERACT_INTERVAL_SECONDS = 5f;
         private static bool _autoInteractRequested;
         private static int _autoInteractAttempts;
         private static int _autoInteractSuccessCount;
         private static int _autoInteractSuccessTarget = DEFAULT_AUTO_INTERACT_SUCCESS_TARGET;
+        private static int _autoInteractMaxAttempts = MAX_AUTO_INTERACT_ATTEMPTS;
+        private static float _autoInteractInitialDelaySeconds = DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS;
+        private static float _autoInteractAttemptIntervalSeconds = DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS;
         private static double _nextAutoInteractAttemptTime;
         private static bool _autoInteractLoopRegistered;
 
@@ -37,6 +49,18 @@ namespace InterStella.EditorTools
                 SessionState.GetInt(AUTO_INTERACT_COUNT_SESSION_KEY, DEFAULT_AUTO_INTERACT_SUCCESS_TARGET),
                 DEFAULT_AUTO_INTERACT_SUCCESS_TARGET,
                 MAX_AUTO_INTERACT_SUCCESS_TARGET);
+            _autoInteractMaxAttempts = Mathf.Clamp(
+                SessionState.GetInt(AUTO_INTERACT_MAX_ATTEMPTS_SESSION_KEY, MAX_AUTO_INTERACT_ATTEMPTS),
+                DEFAULT_AUTO_INTERACT_SUCCESS_TARGET,
+                MAX_AUTO_INTERACT_ATTEMPTS_LIMIT);
+            _autoInteractInitialDelaySeconds = Mathf.Clamp(
+                SessionState.GetFloat(AUTO_INTERACT_INITIAL_DELAY_SESSION_KEY, DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS),
+                0f,
+                120f);
+            _autoInteractAttemptIntervalSeconds = Mathf.Clamp(
+                SessionState.GetFloat(AUTO_INTERACT_INTERVAL_SESSION_KEY, DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS),
+                MIN_AUTO_INTERACT_INTERVAL_SECONDS,
+                MAX_AUTO_INTERACT_INTERVAL_SECONDS);
             if (_autoInteractRequested && EditorApplication.isPlaying && !_autoInteractLoopRegistered)
             {
                 BeginAutoInteractLoop();
@@ -53,8 +77,20 @@ namespace InterStella.EditorTools
             _autoInteractSuccessTarget = _autoInteractRequested
                 ? ResolveAutoInteractSuccessTargetFromArgs()
                 : DEFAULT_AUTO_INTERACT_SUCCESS_TARGET;
+            _autoInteractMaxAttempts = _autoInteractRequested
+                ? ResolveAutoInteractMaxAttemptsFromArgs()
+                : MAX_AUTO_INTERACT_ATTEMPTS;
+            _autoInteractInitialDelaySeconds = _autoInteractRequested
+                ? ResolveAutoInteractInitialDelayFromArgs()
+                : DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS;
+            _autoInteractAttemptIntervalSeconds = _autoInteractRequested
+                ? ResolveAutoInteractIntervalFromArgs()
+                : DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS;
             SessionState.SetBool(AUTO_INTERACT_SESSION_KEY, _autoInteractRequested);
             SessionState.SetInt(AUTO_INTERACT_COUNT_SESSION_KEY, _autoInteractSuccessTarget);
+            SessionState.SetInt(AUTO_INTERACT_MAX_ATTEMPTS_SESSION_KEY, _autoInteractMaxAttempts);
+            SessionState.SetFloat(AUTO_INTERACT_INITIAL_DELAY_SESSION_KEY, _autoInteractInitialDelaySeconds);
+            SessionState.SetFloat(AUTO_INTERACT_INTERVAL_SESSION_KEY, _autoInteractAttemptIntervalSeconds);
 
             EnterPlayModeNow();
         }
@@ -84,6 +120,18 @@ namespace InterStella.EditorTools
                 SessionState.GetInt(AUTO_INTERACT_COUNT_SESSION_KEY, DEFAULT_AUTO_INTERACT_SUCCESS_TARGET),
                 DEFAULT_AUTO_INTERACT_SUCCESS_TARGET,
                 MAX_AUTO_INTERACT_SUCCESS_TARGET);
+            _autoInteractMaxAttempts = Mathf.Clamp(
+                SessionState.GetInt(AUTO_INTERACT_MAX_ATTEMPTS_SESSION_KEY, MAX_AUTO_INTERACT_ATTEMPTS),
+                DEFAULT_AUTO_INTERACT_SUCCESS_TARGET,
+                MAX_AUTO_INTERACT_ATTEMPTS_LIMIT);
+            _autoInteractInitialDelaySeconds = Mathf.Clamp(
+                SessionState.GetFloat(AUTO_INTERACT_INITIAL_DELAY_SESSION_KEY, DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS),
+                0f,
+                120f);
+            _autoInteractAttemptIntervalSeconds = Mathf.Clamp(
+                SessionState.GetFloat(AUTO_INTERACT_INTERVAL_SESSION_KEY, DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS),
+                MIN_AUTO_INTERACT_INTERVAL_SECONDS,
+                MAX_AUTO_INTERACT_INTERVAL_SECONDS);
 
             if (stateChange == PlayModeStateChange.ExitingPlayMode || stateChange == PlayModeStateChange.EnteredEditMode)
             {
@@ -92,8 +140,14 @@ namespace InterStella.EditorTools
                 {
                     _autoInteractRequested = false;
                     _autoInteractSuccessTarget = DEFAULT_AUTO_INTERACT_SUCCESS_TARGET;
+                    _autoInteractMaxAttempts = MAX_AUTO_INTERACT_ATTEMPTS;
+                    _autoInteractInitialDelaySeconds = DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS;
+                    _autoInteractAttemptIntervalSeconds = DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS;
                     SessionState.SetBool(AUTO_INTERACT_SESSION_KEY, false);
                     SessionState.SetInt(AUTO_INTERACT_COUNT_SESSION_KEY, DEFAULT_AUTO_INTERACT_SUCCESS_TARGET);
+                    SessionState.SetInt(AUTO_INTERACT_MAX_ATTEMPTS_SESSION_KEY, MAX_AUTO_INTERACT_ATTEMPTS);
+                    SessionState.SetFloat(AUTO_INTERACT_INITIAL_DELAY_SESSION_KEY, DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS);
+                    SessionState.SetFloat(AUTO_INTERACT_INTERVAL_SESSION_KEY, DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS);
                 }
 
                 return;
@@ -116,11 +170,11 @@ namespace InterStella.EditorTools
 
             _autoInteractAttempts = 0;
             _autoInteractSuccessCount = 0;
-            _nextAutoInteractAttemptTime = EditorApplication.timeSinceStartup + 1.25d;
+            _nextAutoInteractAttemptTime = EditorApplication.timeSinceStartup + _autoInteractInitialDelaySeconds;
 
             EditorApplication.update += TryAutoInteractFromOwner;
             _autoInteractLoopRegistered = true;
-            Debug.Log($"[interStella] ClientAutoPlayBootstrap: auto-interact mode enabled. targetSuccesses={_autoInteractSuccessTarget}");
+            Debug.Log($"[interStella] ClientAutoPlayBootstrap: auto-interact mode enabled. targetSuccesses={_autoInteractSuccessTarget}, maxAttempts={_autoInteractMaxAttempts}, initialDelay={_autoInteractInitialDelaySeconds:F2}, interval={_autoInteractAttemptIntervalSeconds:F2}");
         }
 
         private static void StopAutoInteractLoop()
@@ -144,13 +198,13 @@ namespace InterStella.EditorTools
                 return;
             }
 
-            _nextAutoInteractAttemptTime = EditorApplication.timeSinceStartup + AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS;
+            _nextAutoInteractAttemptTime = EditorApplication.timeSinceStartup + _autoInteractAttemptIntervalSeconds;
             _autoInteractAttempts++;
 
             PlayerInteraction ownerInteraction = FindOwnerInteraction();
             if (ownerInteraction == null)
             {
-                if (_autoInteractAttempts >= MAX_AUTO_INTERACT_ATTEMPTS)
+                if (_autoInteractAttempts >= _autoInteractMaxAttempts)
                 {
                     Debug.LogWarning("[interStella] ClientAutoPlayBootstrap: owner interaction component was not found before timeout.");
                     StopAutoInteractLoopAndClearState();
@@ -165,14 +219,14 @@ namespace InterStella.EditorTools
                 _autoInteractSuccessCount++;
             }
 
-            Debug.Log($"[interStella] ClientAutoPlayBootstrap: auto-interact attempt {_autoInteractAttempts}/{MAX_AUTO_INTERACT_ATTEMPTS}, accepted={requestAccepted}, successes={_autoInteractSuccessCount}/{_autoInteractSuccessTarget}, owner={ownerInteraction.name}");
+            Debug.Log($"[interStella] ClientAutoPlayBootstrap: auto-interact attempt {_autoInteractAttempts}/{_autoInteractMaxAttempts}, accepted={requestAccepted}, successes={_autoInteractSuccessCount}/{_autoInteractSuccessTarget}, owner={ownerInteraction.name}");
             if (_autoInteractSuccessCount >= _autoInteractSuccessTarget)
             {
                 StopAutoInteractLoopAndClearState();
                 return;
             }
 
-            if (_autoInteractAttempts >= MAX_AUTO_INTERACT_ATTEMPTS)
+            if (_autoInteractAttempts >= _autoInteractMaxAttempts)
             {
                 Debug.LogWarning($"[interStella] ClientAutoPlayBootstrap: auto-interact exhausted attempts. successes={_autoInteractSuccessCount}/{_autoInteractSuccessTarget}");
                 StopAutoInteractLoopAndClearState();
@@ -183,8 +237,14 @@ namespace InterStella.EditorTools
         {
             _autoInteractRequested = false;
             _autoInteractSuccessTarget = DEFAULT_AUTO_INTERACT_SUCCESS_TARGET;
+            _autoInteractMaxAttempts = MAX_AUTO_INTERACT_ATTEMPTS;
+            _autoInteractInitialDelaySeconds = DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS;
+            _autoInteractAttemptIntervalSeconds = DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS;
             SessionState.SetBool(AUTO_INTERACT_SESSION_KEY, false);
             SessionState.SetInt(AUTO_INTERACT_COUNT_SESSION_KEY, DEFAULT_AUTO_INTERACT_SUCCESS_TARGET);
+            SessionState.SetInt(AUTO_INTERACT_MAX_ATTEMPTS_SESSION_KEY, MAX_AUTO_INTERACT_ATTEMPTS);
+            SessionState.SetFloat(AUTO_INTERACT_INITIAL_DELAY_SESSION_KEY, DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS);
+            SessionState.SetFloat(AUTO_INTERACT_INTERVAL_SESSION_KEY, DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS);
             StopAutoInteractLoop();
         }
 
@@ -263,6 +323,39 @@ namespace InterStella.EditorTools
             }
 
             return DEFAULT_AUTO_INTERACT_SUCCESS_TARGET;
+        }
+
+        private static int ResolveAutoInteractMaxAttemptsFromArgs()
+        {
+            string rawAttempts = ReadCommandLineValue(AUTO_INTERACT_MAX_ATTEMPTS_ARGUMENT);
+            if (!string.IsNullOrWhiteSpace(rawAttempts) && int.TryParse(rawAttempts, out int parsedAttempts))
+            {
+                return Mathf.Clamp(parsedAttempts, DEFAULT_AUTO_INTERACT_SUCCESS_TARGET, MAX_AUTO_INTERACT_ATTEMPTS_LIMIT);
+            }
+
+            return MAX_AUTO_INTERACT_ATTEMPTS;
+        }
+
+        private static float ResolveAutoInteractInitialDelayFromArgs()
+        {
+            string rawDelay = ReadCommandLineValue(AUTO_INTERACT_INITIAL_DELAY_ARGUMENT);
+            if (!string.IsNullOrWhiteSpace(rawDelay) && float.TryParse(rawDelay, out float parsedDelay))
+            {
+                return Mathf.Clamp(parsedDelay, 0f, 120f);
+            }
+
+            return DEFAULT_AUTO_INTERACT_INITIAL_DELAY_SECONDS;
+        }
+
+        private static float ResolveAutoInteractIntervalFromArgs()
+        {
+            string rawInterval = ReadCommandLineValue(AUTO_INTERACT_INTERVAL_ARGUMENT);
+            if (!string.IsNullOrWhiteSpace(rawInterval) && float.TryParse(rawInterval, out float parsedInterval))
+            {
+                return Mathf.Clamp(parsedInterval, MIN_AUTO_INTERACT_INTERVAL_SECONDS, MAX_AUTO_INTERACT_INTERVAL_SECONDS);
+            }
+
+            return DEFAULT_AUTO_INTERACT_ATTEMPT_INTERVAL_SECONDS;
         }
 
         private static string ReadCommandLineValue(string argumentName)

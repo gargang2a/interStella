@@ -330,6 +330,11 @@ namespace InterStella.Game.Netcode.Runtime
         {
             if (_steamRelayTransportBinderBehaviour == null)
             {
+                _steamRelayTransportBinderBehaviour = GetComponent<SteamRelaySdkTransportBinder>();
+            }
+
+            if (_steamRelayTransportBinderBehaviour == null)
+            {
                 _steamRelayTransportBinderBehaviour = GetComponent<SteamRelayLoopbackTransportBinder>();
             }
 

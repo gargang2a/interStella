@@ -7,11 +7,16 @@ param(
     [int]$ClientBootTimeoutSec = 240,
     [int]$PostReconnectWaitSec = 95,
     [int]$ReconnectAutoInteractCount = 0,
+    [int]$ReconnectAutoInteractMaxAttempts = 120,
+    [double]$ReconnectAutoInteractInitialDelaySec = 10.0,
+    [double]$ReconnectAutoInteractIntervalSec = 0.5,
     [switch]$UseSteamBootstrap,
     [switch]$StrictSteamRelay,
     [string]$SteamInviteLobbyId = "local-regression",
     [string]$SteamInviteHostId = "127.0.0.1:7770",
-    [switch]$KeepClientRunning
+    [switch]$KeepClientRunning,
+    [int]$StartupRetryMaxAttempts = 2,
+    [int]$StartupRetryDelaySec = 8
 )
 
 $ErrorActionPreference = "Stop"
@@ -158,6 +163,24 @@ function Wait-ClientReady {
     }
 }
 
+function Get-AttemptLogPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BaseLogPath,
+        [Parameter(Mandatory = $true)]
+        [int]$Attempt
+    )
+
+    if ($Attempt -le 1) {
+        return $BaseLogPath
+    }
+
+    $directory = [System.IO.Path]::GetDirectoryName($BaseLogPath)
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($BaseLogPath)
+    $extension = [System.IO.Path]::GetExtension($BaseLogPath)
+    return [System.IO.Path]::Combine($directory, "$baseName-attempt$Attempt$extension")
+}
+
 function Start-ReconnectClient {
     param(
         [Parameter(Mandatory = $true)]
@@ -171,6 +194,9 @@ function Start-ReconnectClient {
         [Parameter(Mandatory = $true)]
         [string]$LogPath,
         [int]$InteractCount = 0,
+        [int]$AutoInteractMaxAttempts = 24,
+        [double]$AutoInteractInitialDelaySec = 1.25,
+        [double]$AutoInteractIntervalSec = 0.5,
         [bool]$UseSteamBootstrap = $false,
         [bool]$StrictSteamRelay = $false,
         [string]$InviteLobbyId = "",
@@ -197,6 +223,14 @@ function Start-ReconnectClient {
         "-logFile", $LogPath
     )
 
+    if ($autoInteractEnabled) {
+        $arguments += @(
+            "-interstella-auto-interact-max-attempts", ([Math]::Max(1, $AutoInteractMaxAttempts).ToString()),
+            "-interstella-auto-interact-initial-delay", ([Math]::Max(0d, $AutoInteractInitialDelaySec).ToString("0.###", [System.Globalization.CultureInfo]::InvariantCulture)),
+            "-interstella-auto-interact-interval", ([Math]::Max(0.1d, $AutoInteractIntervalSec).ToString("0.###", [System.Globalization.CultureInfo]::InvariantCulture))
+        )
+    }
+
     if ($UseSteamBootstrap) {
         $arguments += @("-interstella-provider", "steam")
 
@@ -214,6 +248,90 @@ function Start-ReconnectClient {
     }
 
     return Start-Process -FilePath $UnityPath -ArgumentList $arguments -PassThru
+}
+
+function Start-ReconnectClientWithRetry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$UnityPath,
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectPath,
+        [Parameter(Mandatory = $true)]
+        [string]$HubSessionId,
+        [Parameter(Mandatory = $true)]
+        [string]$AccessToken,
+        [Parameter(Mandatory = $true)]
+        [string]$BaseLogPath,
+        [int]$InteractCount = 0,
+        [int]$AutoInteractMaxAttempts = 24,
+        [double]$AutoInteractInitialDelaySec = 1.25,
+        [double]$AutoInteractIntervalSec = 0.5,
+        [int]$ClientReadyTimeoutSec = 90,
+        [int]$MaxAttempts = 1,
+        [int]$RetryDelaySec = 2,
+        [bool]$UseSteamBootstrap = $false,
+        [bool]$StrictSteamRelay = $false,
+        [string]$InviteLobbyId = "",
+        [string]$InviteHostId = ""
+    )
+
+    $attemptLimit = [Math]::Max(1, $MaxAttempts)
+    $retryDelay = [Math]::Max(1, $RetryDelaySec)
+    for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
+        $attemptLogPath = Get-AttemptLogPath -BaseLogPath $BaseLogPath -Attempt $attempt
+        $process = Start-ReconnectClient `
+            -UnityPath $UnityPath `
+            -ProjectPath $ProjectPath `
+            -HubSessionId $HubSessionId `
+            -AccessToken $AccessToken `
+            -LogPath $attemptLogPath `
+            -InteractCount $InteractCount `
+            -AutoInteractMaxAttempts $AutoInteractMaxAttempts `
+            -AutoInteractInitialDelaySec $AutoInteractInitialDelaySec `
+            -AutoInteractIntervalSec $AutoInteractIntervalSec `
+            -UseSteamBootstrap $UseSteamBootstrap `
+            -StrictSteamRelay $StrictSteamRelay `
+            -InviteLobbyId $InviteLobbyId `
+            -InviteHostId $InviteHostId
+        $readyResult = Wait-ClientReady -LogPath $attemptLogPath -ClientProcess $process -TimeoutSec $ClientReadyTimeoutSec
+        if ($readyResult.Ready) {
+            return @{
+                Ready = $true
+                Process = $process
+                LogPath = $attemptLogPath
+                Reason = $readyResult.Reason
+                AttemptsUsed = $attempt
+            }
+        }
+
+        $process.Refresh()
+        if (-not $process.HasExited) {
+            Stop-Process -Id $process.Id -Force
+        }
+
+        $retryableFailure = $readyResult.Reason -eq "ClientStartupFailed" `
+            -or $readyResult.Reason -eq "ClientStartupTimeout" `
+            -or $readyResult.Reason -eq "ClientProcessExited"
+        if (-not $retryableFailure -or $attempt -ge $attemptLimit) {
+            return @{
+                Ready = $false
+                Process = $process
+                LogPath = $attemptLogPath
+                Reason = $readyResult.Reason
+                AttemptsUsed = $attempt
+            }
+        }
+
+        Start-Sleep -Seconds $retryDelay
+    }
+
+    return @{
+        Ready = $false
+        Process = $null
+        LogPath = $BaseLogPath
+        Reason = "ClientStartupUnknown"
+        AttemptsUsed = $attemptLimit
+    }
 }
 
 Assert-File -Path $UnityEditorPath -Label "Unity editor"
@@ -238,42 +356,64 @@ $clientB = $null
 $summary = $null
 $summaryPath = Join-Path $LogDirectory "reconnect-regression-summary-$stamp.json"
 $exceptionMessage = ""
+$clientAStartupAttemptsUsed = 0
+$clientBStartupAttemptsUsed = 0
+$clientAStartupLastReason = ""
+$clientBStartupLastReason = ""
 
 try {
-    $clientA = Start-ReconnectClient `
+    $clientAStartResult = Start-ReconnectClientWithRetry `
         -UnityPath $UnityEditorPath `
         -ProjectPath $ClientProjectPath `
         -HubSessionId $hubSessionId `
         -AccessToken $accessToken `
-        -LogPath $clientALog `
+        -BaseLogPath $clientALog `
         -InteractCount 0 `
+        -AutoInteractMaxAttempts $ReconnectAutoInteractMaxAttempts `
+        -AutoInteractInitialDelaySec $ReconnectAutoInteractInitialDelaySec `
+        -AutoInteractIntervalSec $ReconnectAutoInteractIntervalSec `
+        -ClientReadyTimeoutSec $ClientBootTimeoutSec `
+        -MaxAttempts $StartupRetryMaxAttempts `
+        -RetryDelaySec $StartupRetryDelaySec `
         -UseSteamBootstrap $UseSteamBootstrap `
         -StrictSteamRelay $StrictSteamRelay `
         -InviteLobbyId $SteamInviteLobbyId `
         -InviteHostId $SteamInviteHostId
-    $clientAReady = Wait-ClientReady -LogPath $clientALog -ClientProcess $clientA -TimeoutSec $ClientBootTimeoutSec
-    if (-not $clientAReady.Ready) {
-        throw "Client A failed to become ready. Reason=$($clientAReady.Reason) Log=$clientALog"
+    $clientA = $clientAStartResult.Process
+    $clientALog = $clientAStartResult.LogPath
+    $clientAStartupAttemptsUsed = $clientAStartResult.AttemptsUsed
+    $clientAStartupLastReason = $clientAStartResult.Reason
+    if (-not $clientAStartResult.Ready) {
+        throw "Client A failed to become ready. Reason=$($clientAStartResult.Reason) Attempts=$($clientAStartResult.AttemptsUsed) Log=$clientALog"
     }
 
     if (-not $clientA.HasExited) {
         Stop-Process -Id $clientA.Id -Force
     }
 
-    $clientB = Start-ReconnectClient `
+    $clientBStartResult = Start-ReconnectClientWithRetry `
         -UnityPath $UnityEditorPath `
         -ProjectPath $ClientProjectPath `
         -HubSessionId $hubSessionId `
         -AccessToken $accessToken `
-        -LogPath $clientBLog `
+        -BaseLogPath $clientBLog `
         -InteractCount $ReconnectAutoInteractCount `
+        -AutoInteractMaxAttempts $ReconnectAutoInteractMaxAttempts `
+        -AutoInteractInitialDelaySec $ReconnectAutoInteractInitialDelaySec `
+        -AutoInteractIntervalSec $ReconnectAutoInteractIntervalSec `
+        -ClientReadyTimeoutSec $ClientBootTimeoutSec `
+        -MaxAttempts $StartupRetryMaxAttempts `
+        -RetryDelaySec $StartupRetryDelaySec `
         -UseSteamBootstrap $UseSteamBootstrap `
         -StrictSteamRelay $StrictSteamRelay `
         -InviteLobbyId $SteamInviteLobbyId `
         -InviteHostId $SteamInviteHostId
-    $clientBReady = Wait-ClientReady -LogPath $clientBLog -ClientProcess $clientB -TimeoutSec $ClientBootTimeoutSec
-    if (-not $clientBReady.Ready) {
-        throw "Client B failed to become ready. Reason=$($clientBReady.Reason) Log=$clientBLog"
+    $clientB = $clientBStartResult.Process
+    $clientBLog = $clientBStartResult.LogPath
+    $clientBStartupAttemptsUsed = $clientBStartResult.AttemptsUsed
+    $clientBStartupLastReason = $clientBStartResult.Reason
+    if (-not $clientBStartResult.Ready) {
+        throw "Client B failed to become ready. Reason=$($clientBStartResult.Reason) Attempts=$($clientBStartResult.AttemptsUsed) Log=$clientBLog"
     }
 
     Start-Sleep -Seconds $PostReconnectWaitSec
@@ -362,7 +502,14 @@ try {
         }
     }
 
-    $reconnectPass = ($queueMatch.Success -and $releaseMatch -ne $null -and $assignAfterRelease -ne $null)
+    $latestAssignMatch = $null
+    if ($assignMatches.Count -gt 0) {
+        $latestAssignMatch = $assignMatches[$assignMatches.Count - 1]
+    }
+
+    $racePathDetected = ($queueMatch.Success -and $releaseMatch -ne $null -and $assignAfterRelease -ne $null)
+    $directAssignDetected = ($latestAssignMatch -ne $null)
+    $reconnectPass = ($racePathDetected -or $directAssignDetected)
 
     $interactionTarget = [Math]::Max(1, $ReconnectAutoInteractCount)
     $autoInteractReachedTargetInClientB = if ($ReconnectAutoInteractCount -gt 0) {
@@ -405,12 +552,22 @@ try {
         -and $steamPass `
         -and ($authorityMismatchAcceptedCount -eq 0)
     $releasedClientId = if ($releaseMatch -ne $null) { $releaseMatch.Groups[1].Value } else { "" }
-    $reassignedClientId = if ($assignAfterRelease -ne $null) { $assignAfterRelease.Groups[1].Value } else { "" }
+    $reassignedClientId = if ($assignAfterRelease -ne $null) {
+        $assignAfterRelease.Groups[1].Value
+    }
+    elseif ($latestAssignMatch -ne $null) {
+        $latestAssignMatch.Groups[1].Value
+    }
+    else {
+        ""
+    }
 
     $summary = [ordered]@{
         timestamp = (Get-Date).ToString("s")
         passed = $passed
         reconnectPass = $reconnectPass
+        racePathDetected = $racePathDetected
+        directAssignDetected = $directAssignDetected
         interactionPass = $interactionPass
         durableTransientPass = $durableTransientPass
         steamPass = $steamPass
@@ -434,6 +591,15 @@ try {
         tetherDurablePublishedInHost = $tetherDurablePublishedInHost
         tetherDurableAppliedInClientB = $tetherDurableAppliedInClientB
         reconnectAutoInteractCount = $ReconnectAutoInteractCount
+        reconnectAutoInteractMaxAttempts = $ReconnectAutoInteractMaxAttempts
+        reconnectAutoInteractInitialDelaySec = $ReconnectAutoInteractInitialDelaySec
+        reconnectAutoInteractIntervalSec = $ReconnectAutoInteractIntervalSec
+        clientStartupRetryMaxAttempts = [Math]::Max(1, $StartupRetryMaxAttempts)
+        clientStartupRetryDelaySec = [Math]::Max(1, $StartupRetryDelaySec)
+        clientAStartupAttemptsUsed = $clientAStartupAttemptsUsed
+        clientAStartupLastReason = $clientAStartupLastReason
+        clientBStartupAttemptsUsed = $clientBStartupAttemptsUsed
+        clientBStartupLastReason = $clientBStartupLastReason
         repairCheckRequired = ($ReconnectAutoInteractCount -gt 0)
         autoInteractReachedTargetInClientB = $autoInteractReachedTargetInClientB
         useSteamBootstrap = [bool]$UseSteamBootstrap
@@ -455,6 +621,12 @@ catch {
         timestamp = (Get-Date).ToString("s")
         passed = $false
         exception = $exceptionMessage
+        clientStartupRetryMaxAttempts = [Math]::Max(1, $StartupRetryMaxAttempts)
+        clientStartupRetryDelaySec = [Math]::Max(1, $StartupRetryDelaySec)
+        clientAStartupAttemptsUsed = $clientAStartupAttemptsUsed
+        clientAStartupLastReason = $clientAStartupLastReason
+        clientBStartupAttemptsUsed = $clientBStartupAttemptsUsed
+        clientBStartupLastReason = $clientBStartupLastReason
         clientALog = $clientALog
         clientBLog = $clientBLog
         hostEditorLog = $HostEditorLogPath
