@@ -796,3 +796,21 @@ Gate 판정:
 현재 Go/No-Go:
 - NO-GO (수동 검증 미완료)
 - Steam 통합 착수 전, Gate 2/3/4를 동일 세션에서 PASS로 채워야 함
+
+### 2026-03-07 20:03 (KST)
+## Steam 게이트 실행 결과 v1.1 (상호작용 회귀 추가)
+추가 실행:
+- 명령: `run-interaction-regression.ps1 -AutoInteractCount 2 -PostInteractWaitSec 55`
+- summary: `Logs/interaction-regression-summary-20260307-200114.json`
+- 결과: `INTERACTION_REGRESSION_PASS`
+
+갱신된 Gate 판정:
+1. 세션/재접속 안정성: PASS
+2. 권한 경계 일관성: PASS (caller/owner parity + committed interaction)
+3. 핵심 루프 성립: PASS (deliveryAcceptedCount=1)
+4. 조작/가시성: PENDING (수동 체감 필요)
+5. 운영/품질: PASS
+
+현재 Go/No-Go:
+- NO-GO (Gate 4 미완료)
+- Steam 통합 착수 전, 수동 체감 라운드 1회로 Gate 4를 PASS/FAIL 확정
