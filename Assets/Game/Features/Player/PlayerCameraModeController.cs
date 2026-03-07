@@ -49,6 +49,8 @@ namespace InterStella.Game.Features.Player
         private CameraMode _currentMode;
         private bool _isInitialized;
 
+        public string CurrentModeName => _currentMode.ToString();
+
         private void Awake()
         {
             _currentMode = _startMode;
@@ -64,16 +66,45 @@ namespace InterStella.Game.Features.Player
         {
             if (Input.GetKeyDown(_firstPersonKey))
             {
-                SetMode(CameraMode.FirstPerson);
+                SetFirstPersonMode();
             }
             else if (Input.GetKeyDown(_overviewKey))
             {
-                SetMode(CameraMode.Overview);
+                SetOverviewMode();
             }
             else if (Input.GetKeyDown(_thirdPersonKey))
             {
-                SetMode(CameraMode.ThirdPerson);
+                SetThirdPersonMode();
             }
+        }
+
+        public void SetFirstPersonMode()
+        {
+            SetMode(CameraMode.FirstPerson);
+        }
+
+        public void SetOverviewMode()
+        {
+            SetMode(CameraMode.Overview);
+        }
+
+        public void SetThirdPersonMode()
+        {
+            SetMode(CameraMode.ThirdPerson);
+        }
+
+        public bool ForceSnapToCurrentMode()
+        {
+            ResolveTargetsIfMissing();
+            if (_primaryTarget == null)
+            {
+                return false;
+            }
+
+            ComputeDesiredPose(out Vector3 desiredPosition, out Quaternion desiredRotation);
+            transform.SetPositionAndRotation(desiredPosition, desiredRotation);
+            _isInitialized = true;
+            return true;
         }
 
         private void LateUpdate()
@@ -110,6 +141,7 @@ namespace InterStella.Game.Features.Player
 
             _currentMode = mode;
             _isInitialized = false;
+            Debug.Log("[InterStella][CameraMode] switched=" + _currentMode);
         }
 
         private void ComputeDesiredPose(out Vector3 desiredPosition, out Quaternion desiredRotation)

@@ -814,3 +814,33 @@ Gate 판정:
 현재 Go/No-Go:
 - NO-GO (Gate 4 미완료)
 - Steam 통합 착수 전, 수동 체감 라운드 1회로 Gate 4를 PASS/FAIL 확정
+
+### 2026-03-07 20:42 (KST)
+## Steam 게이트 실행 결과 v1.2 (카메라 모드 스모크 추가)
+추가 실행(Host PlayMode + Unity MCP 메뉴 실행):
+1. `Tools/InterStella/Debug/Camera/Set First Person`
+2. `Tools/InterStella/Debug/Camera/Set Third Person`
+3. `Tools/InterStella/Debug/Camera/Set Overview`
+4. `Tools/InterStella/Debug/Camera/Run Mode Smoke (1-2-3)`
+
+실행 근거:
+- 콘솔 로그:
+  - `[InterStella][CameraMode] forced=FirstPerson expected=FirstPerson ...`
+  - `[InterStella][CameraMode] forced=ThirdPerson expected=ThirdPerson ...`
+  - `[InterStella][CameraMode] forced=Overview expected=Overview ...`
+  - `[InterStella][CameraSmoke] PASS firstDistance=0.35 thirdDistance=4.22 overviewHeight=18.00 mode=Overview`
+- 캡처:
+  - `Assets/Screenshots/gate4_camera_firstperson_v2.png`
+  - `Assets/Screenshots/gate4_camera_thirdperson_v2.png`
+  - `Assets/Screenshots/gate4_camera_overview_v2.png`
+
+갱신된 Gate 판정:
+1. 세션/재접속 안정성: PASS
+2. 권한 경계 일관성: PASS
+3. 핵심 루프 성립: PASS
+4. 조작/가시성: PASS (시점 1/2/3 강제 전환 + 스모크 메트릭)
+5. 운영/품질: PASS
+
+현재 Go/No-Go:
+- GO (Steam 로비/초대/릴레이 통합 착수 가능)
+- 권장: Steam 통합 중 사용자 장시간 체감 라운드(멀미/피로)는 별도 회차로 추가 기록

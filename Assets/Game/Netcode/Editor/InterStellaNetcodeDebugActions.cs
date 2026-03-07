@@ -1,5 +1,6 @@
 using InterStella.Game.Features.Scavenge;
 using InterStella.Game.Features.Stations;
+using InterStella.Game.Features.Player;
 using UnityEditor;
 using UnityEngine;
 
@@ -128,6 +129,150 @@ namespace InterStella.EditorTools
             stationTransform.position = stationPosition;
             stationTransform.rotation = Quaternion.LookRotation(-playerTransform.forward, Vector3.up);
             Debug.Log("[InterStella][Debug] Placed RepairStation in front of PlayerB (test scale applied).");
+        }
+
+        [MenuItem("Tools/InterStella/Debug/Camera/Set First Person")]
+        private static void SetCameraFirstPerson()
+        {
+            if (!TryGetCameraController(out PlayerCameraModeController cameraController))
+            {
+                return;
+            }
+
+            cameraController.SetFirstPersonMode();
+            if (!cameraController.ForceSnapToCurrentMode())
+            {
+                Debug.LogWarning("[InterStella][Debug] Failed to snap camera after FirstPerson mode set.");
+                return;
+            }
+
+            LogCameraSnapshot("FirstPerson", cameraController);
+        }
+
+        [MenuItem("Tools/InterStella/Debug/Camera/Set Overview")]
+        private static void SetCameraOverview()
+        {
+            if (!TryGetCameraController(out PlayerCameraModeController cameraController))
+            {
+                return;
+            }
+
+            cameraController.SetOverviewMode();
+            if (!cameraController.ForceSnapToCurrentMode())
+            {
+                Debug.LogWarning("[InterStella][Debug] Failed to snap camera after Overview mode set.");
+                return;
+            }
+
+            LogCameraSnapshot("Overview", cameraController);
+        }
+
+        [MenuItem("Tools/InterStella/Debug/Camera/Set Third Person")]
+        private static void SetCameraThirdPerson()
+        {
+            if (!TryGetCameraController(out PlayerCameraModeController cameraController))
+            {
+                return;
+            }
+
+            cameraController.SetThirdPersonMode();
+            if (!cameraController.ForceSnapToCurrentMode())
+            {
+                Debug.LogWarning("[InterStella][Debug] Failed to snap camera after ThirdPerson mode set.");
+                return;
+            }
+
+            LogCameraSnapshot("ThirdPerson", cameraController);
+        }
+
+        [MenuItem("Tools/InterStella/Debug/Camera/Run Mode Smoke (1-2-3)")]
+        private static void RunCameraModeSmoke()
+        {
+            if (!TryGetCameraController(out PlayerCameraModeController cameraController))
+            {
+                return;
+            }
+
+            GameObject playerA = GameObject.Find("PlayerA");
+            if (playerA == null)
+            {
+                Debug.LogWarning("[InterStella][Debug] Camera smoke failed: PlayerA was not found.");
+                return;
+            }
+
+            Transform playerATransform = playerA.transform;
+            Transform playerBTransform = GameObject.Find("PlayerB")?.transform;
+
+            cameraController.SetFirstPersonMode();
+            if (!cameraController.ForceSnapToCurrentMode())
+            {
+                Debug.LogWarning("[InterStella][Debug] Camera smoke failed: FirstPerson snap failed.");
+                return;
+            }
+
+            float firstPersonDistance = Vector3.Distance(cameraController.transform.position, playerATransform.position);
+
+            cameraController.SetThirdPersonMode();
+            if (!cameraController.ForceSnapToCurrentMode())
+            {
+                Debug.LogWarning("[InterStella][Debug] Camera smoke failed: ThirdPerson snap failed.");
+                return;
+            }
+
+            float thirdPersonDistance = Vector3.Distance(cameraController.transform.position, playerATransform.position);
+
+            cameraController.SetOverviewMode();
+            if (!cameraController.ForceSnapToCurrentMode())
+            {
+                Debug.LogWarning("[InterStella][Debug] Camera smoke failed: Overview snap failed.");
+                return;
+            }
+
+            Vector3 focusPoint = playerATransform.position;
+            if (playerBTransform != null)
+            {
+                focusPoint = (focusPoint + playerBTransform.position) * 0.5f;
+            }
+
+            float overviewHeight = cameraController.transform.position.y - focusPoint.y;
+            bool pass = firstPersonDistance <= 1.5f &&
+                        thirdPersonDistance > firstPersonDistance + 0.8f &&
+                        overviewHeight >= 8f;
+
+            string status = pass ? "PASS" : "FAIL";
+            Debug.Log($"[InterStella][CameraSmoke] {status} firstDistance={firstPersonDistance:F2} thirdDistance={thirdPersonDistance:F2} overviewHeight={overviewHeight:F2} mode={cameraController.CurrentModeName}");
+        }
+
+        private static bool TryGetCameraController(out PlayerCameraModeController cameraController)
+        {
+            cameraController = null;
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[InterStella][Debug] Play mode is required for camera debug actions.");
+                return false;
+            }
+
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                Debug.LogWarning("[InterStella][Debug] Main Camera was not found.");
+                return false;
+            }
+
+            if (!mainCamera.TryGetComponent(out cameraController))
+            {
+                Debug.LogWarning("[InterStella][Debug] Main Camera is missing PlayerCameraModeController.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void LogCameraSnapshot(string expectedMode, PlayerCameraModeController cameraController)
+        {
+            Vector3 position = cameraController.transform.position;
+            Vector3 euler = cameraController.transform.eulerAngles;
+            Debug.Log($"[InterStella][CameraMode] forced={cameraController.CurrentModeName} expected={expectedMode} position=({position.x:F2},{position.y:F2},{position.z:F2}) rotation=({euler.x:F1},{euler.y:F1},{euler.z:F1})");
         }
     }
 }

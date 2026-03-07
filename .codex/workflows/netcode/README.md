@@ -48,3 +48,16 @@ Prerequisites:
 - Host Unity editor for `C:\Unity\interStella` is running and already in Play mode.
 - `C:\Unity\interStellaClient` exists.
 - Unity editor path in script matches installed version.
+
+Camera mode smoke (Gate4) uses Unity debug menu actions (no separate PowerShell runner yet):
+1. `Tools/InterStella/Debug/Camera/Set First Person`
+2. `Tools/InterStella/Debug/Camera/Set Third Person`
+3. `Tools/InterStella/Debug/Camera/Set Overview`
+4. `Tools/InterStella/Debug/Camera/Run Mode Smoke (1-2-3)`
+
+Pass evidence:
+- Console includes `[InterStella][CameraSmoke] PASS ...`
+- Optional screenshots:
+  - `Assets/Screenshots/gate4_camera_firstperson_v2.png`
+  - `Assets/Screenshots/gate4_camera_thirdperson_v2.png`
+  - `Assets/Screenshots/gate4_camera_overview_v2.png`

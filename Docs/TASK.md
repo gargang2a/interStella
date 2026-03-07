@@ -676,3 +676,24 @@
   - Gate 3 PASS(최소 1회 납품)
 - [ ] 잔여
   - Gate 4(1/2/3 시점 전환 + 조작감/가시성) 수동 체감 검증
+
+### 2026-03-07 20:42 (KST) 진행 스냅샷
+- [x] Gate 4 검증 보조 코드 추가
+  - `PlayerCameraModeController`에 디버그 강제 전환 API 추가
+    - `SetFirstPersonMode`, `SetOverviewMode`, `SetThirdPersonMode`, `ForceSnapToCurrentMode`
+  - `InterStellaNetcodeDebugActions`에 카메라 메뉴 추가
+    - `Tools/InterStella/Debug/Camera/Set First Person`
+    - `Tools/InterStella/Debug/Camera/Set Overview`
+    - `Tools/InterStella/Debug/Camera/Set Third Person`
+    - `Tools/InterStella/Debug/Camera/Run Mode Smoke (1-2-3)`
+- [x] Gate 4 스모크 실행/증거 확보
+  - 콘솔: `[InterStella][CameraSmoke] PASS firstDistance=0.35 thirdDistance=4.22 overviewHeight=18.00 mode=Overview`
+  - 스크린샷:
+    - `Assets/Screenshots/gate4_camera_firstperson_v2.png`
+    - `Assets/Screenshots/gate4_camera_thirdperson_v2.png`
+    - `Assets/Screenshots/gate4_camera_overview_v2.png`
+- [x] Steam Gate 판정 갱신
+  - Gate 4 PASS(카메라 전환/가시성 스모크 기준)
+  - Gate 1~5 전체 PASS -> Steam 통합 착수 가능 상태
+- [ ] 후속(권장)
+  - 사용자 장시간 체감 라운드(멀미/조작 피로) 1회 추가 기록
