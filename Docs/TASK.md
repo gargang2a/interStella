@@ -792,3 +792,31 @@
 - [ ] 다음 단계
   - Steam SDK transport binder(실제 Steam API 호출 구현체) 추가
   - fallback 비활성(strict relay)에서 Host/Client E2E 재검증
+
+### 2026-03-07 23:08 (KST) 진행 스냅샷
+- [x] Steam strict 상호작용 회귀 실패 원인 고정
+  - 원인: 요청은 서버 도달했지만 `committed=False`로만 처리되어 납품 로그가 생성되지 않음
+  - 조치 파일: `Assets/Game/Netcode/Runtime/FishNetScenePlayerAssigner.cs`
+  - 조치 내용: 원격 슬롯(기본 slot 1) 할당 시 회귀 보조 시드 적용
+    - `Scrap_03`를 PlayerB에 선지급
+    - `RepairStation`을 PlayerB 전방으로 재배치
+    - 로그: `[FishNetScenePlayerAssigner] Regression seed ready ...`
+- [x] 회귀 스크립트 판독 보강
+  - 파일: `.codex/workflows/netcode/run-interaction-regression.ps1`
+  - 신규 summary 필드:
+    - `acceptedAnyCount`
+    - `acceptedUncommittedCount`
+    - `regressionSeedAppliedInHost`
+- [x] Steam strict E2E 재실행 PASS
+  - 실행: `powershell -ExecutionPolicy Bypass -File .\\.codex\\workflows\\netcode\\run-interaction-regression.ps1 -UseSteamBootstrap -StrictSteamRelay`
+  - 결과: `INTERACTION_REGRESSION_PASS ... ASSIGNED=1 COMMITTED=1 DELIVERIES=1`
+  - summary: `Logs/interaction-regression-summary-20260307-230730.json`
+    - `passed=true`
+    - `steamPass=true`
+    - `acceptedCommittedCount=1`
+    - `deliveryAcceptedCount=1`
+- [x] 회귀 안정성 확인
+  - EditMode tests: `total=11, passed=11, failed=0`
+- [ ] 다음 단계
+  - host측 binder auto-resolve 경로를 프리팹/씬 직렬화 의존 없이 고정하는 리팩터 1회
+  - durable/transient 대상(`Fuel/Repair/Tether`) strict-path 회귀 자동화 항목 확장

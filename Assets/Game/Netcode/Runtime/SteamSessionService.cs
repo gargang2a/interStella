@@ -57,6 +57,9 @@ namespace InterStella.Game.Netcode.Runtime
         private string _selfSteamIdArgument = "interstella-steam-self-id";
 
         [SerializeField]
+        private string _strictRelayArgument = "interstella-steam-strict-relay";
+
+        [SerializeField]
         private LifecycleState _lifecycleState = LifecycleState.Idle;
 
         private ISessionService _networkSession;
@@ -277,6 +280,11 @@ namespace InterStella.Game.Netcode.Runtime
                 string inviteHostId = ReadRuntimeOverride(_inviteHostIdArgument, "INTERSTELLA_INVITE_HOST_ID");
                 QueueInvite(inviteLobbyId, inviteHostId);
             }
+
+            if (ReadRuntimeFlag(_strictRelayArgument, "INTERSTELLA_STEAM_STRICT_RELAY"))
+            {
+                _allowDirectFallbackIfRelayUnavailable = false;
+            }
         }
 
         private void RefreshLifecycleFromState()
@@ -346,6 +354,52 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             return string.Empty;
+        }
+
+        private static bool ReadRuntimeFlag(string argumentName, string environmentVariableName)
+        {
+            string fromEnvironment = Environment.GetEnvironmentVariable(environmentVariableName);
+            if (!string.IsNullOrWhiteSpace(fromEnvironment))
+            {
+                string normalized = fromEnvironment.Trim().ToLowerInvariant();
+                return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+            }
+
+            if (string.IsNullOrWhiteSpace(argumentName))
+            {
+                return false;
+            }
+
+            string argumentToken = "-" + argumentName;
+            string equalsToken = argumentToken + "=";
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (string.Equals(arg, argumentToken, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 < args.Length && !args[i + 1].StartsWith("-", StringComparison.Ordinal))
+                    {
+                        string value = args[i + 1].Trim();
+                        return value != "0" && !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    return true;
+                }
+
+                if (arg.StartsWith(equalsToken, StringComparison.OrdinalIgnoreCase))
+                {
+                    string value = arg.Substring(equalsToken.Length).Trim();
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        return true;
+                    }
+
+                    return value != "0" && !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            return false;
         }
     }
 }

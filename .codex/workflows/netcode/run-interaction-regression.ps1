@@ -7,6 +7,10 @@ param(
     [int]$ClientBootTimeoutSec = 240,
     [int]$PostInteractWaitSec = 25,
     [int]$AutoInteractCount = 2,
+    [switch]$UseSteamBootstrap,
+    [switch]$StrictSteamRelay,
+    [string]$SteamInviteLobbyId = "local-regression",
+    [string]$SteamInviteHostId = "127.0.0.1:7770",
     [switch]$KeepClientRunning
 )
 
@@ -167,7 +171,11 @@ function Start-InteractionClient {
         [Parameter(Mandatory = $true)]
         [string]$LogPath,
         [Parameter(Mandatory = $true)]
-        [int]$InteractCount
+        [int]$InteractCount,
+        [bool]$UseSteamBootstrap = $false,
+        [bool]$StrictSteamRelay = $false,
+        [string]$InviteLobbyId = "",
+        [string]$InviteHostId = ""
     )
 
     $arguments = @(
@@ -186,6 +194,22 @@ function Start-InteractionClient {
         "-executeMethod", "InterStella.EditorTools.InterStellaClientAutoPlayBootstrap.StartClientPlay",
         "-logFile", $LogPath
     )
+
+    if ($UseSteamBootstrap) {
+        $arguments += @("-interstella-provider", "steam")
+
+        if (-not [string]::IsNullOrWhiteSpace($InviteLobbyId)) {
+            $arguments += @("-interstella-invite-lobby-id", $InviteLobbyId)
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($InviteHostId)) {
+            $arguments += @("-interstella-invite-host-id", $InviteHostId)
+        }
+
+        if ($StrictSteamRelay) {
+            $arguments += @("-interstella-steam-strict-relay", "1")
+        }
+    }
 
     return Start-Process -FilePath $UnityPath -ArgumentList $arguments -PassThru
 }
@@ -242,7 +266,11 @@ try {
         -HubSessionId $hubSessionId `
         -AccessToken $accessToken `
         -LogPath $clientLog `
-        -InteractCount $AutoInteractCount
+        -InteractCount $AutoInteractCount `
+        -UseSteamBootstrap $UseSteamBootstrap `
+        -StrictSteamRelay $StrictSteamRelay `
+        -InviteLobbyId $SteamInviteLobbyId `
+        -InviteHostId $SteamInviteHostId
 
     $clientReady = Wait-ClientReady -LogPath $clientLog -ClientProcess $client -TimeoutSec $ClientBootTimeoutSec
     if (-not $clientReady.Ready) {
@@ -254,12 +282,26 @@ try {
     $clientLogText = if (Test-Path $clientLog -PathType Leaf) { Get-Content $clientLog -Raw } else { "" }
 
     $assignedMatch = [Regex]::Match($hostDeltaText, "Assigned client (\d+) to slot 1 \(PlayerB\)\.")
+    $acceptedAnyMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\..*committed=(True|False)")
     $acceptedCommittedMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\..*committed=True")
+    $acceptedUncommittedMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\..*committed=False")
     $deliveryMatches = [Regex]::Matches($hostDeltaText, "\[RepairStationObjective\] Delivery accepted\. delivered=(\d+)/(\d+)")
+    $regressionSeedAppliedInHost = $hostDeltaText -match "\[FishNetScenePlayerAssigner\] Regression seed ready for slot \d+\."
     $ownerBoundaryPass = Parse-OwnerBoundaryPass -HostLogDelta $hostDeltaText
     $autoInteractReachedTarget = $clientLogText -match "successes=\d+/$([Math]::Max(1, $AutoInteractCount))"
+    $steamBootstrapAppliedInClient = $clientLogText -match "\[SteamSessionService\] Applied Steam bootstrap to FishNet\..*binder=True"
+    $steamBinderAppliedInClient = $clientLogText -match "\[FishNetSessionService\] Steam relay transport binder applied\."
+    $steamFallbackInClient = $clientLogText -match "Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled\."
 
-    $passed = ($assignedMatch.Success -and $ownerBoundaryPass -and $acceptedCommittedMatches.Count -ge 1 -and $deliveryMatches.Count -ge 1)
+    $steamPass = $true
+    if ($UseSteamBootstrap) {
+        $steamPass = $steamBootstrapAppliedInClient -and $steamBinderAppliedInClient
+        if ($StrictSteamRelay) {
+            $steamPass = $steamPass -and (-not $steamFallbackInClient)
+        }
+    }
+
+    $passed = ($assignedMatch.Success -and $ownerBoundaryPass -and $acceptedCommittedMatches.Count -ge 1 -and $deliveryMatches.Count -ge 1 -and $steamPass)
     $assignedClientId = if ($assignedMatch.Success) { $assignedMatch.Groups[1].Value } else { "" }
 
     $summary = [ordered]@{
@@ -268,10 +310,21 @@ try {
         assignedClientDetected = $assignedMatch.Success
         assignedClientId = $assignedClientId
         ownerBoundaryPass = $ownerBoundaryPass
+        acceptedAnyCount = $acceptedAnyMatches.Count
         acceptedCommittedCount = $acceptedCommittedMatches.Count
+        acceptedUncommittedCount = $acceptedUncommittedMatches.Count
         deliveryAcceptedCount = $deliveryMatches.Count
+        regressionSeedAppliedInHost = $regressionSeedAppliedInHost
         autoInteractReachedTarget = $autoInteractReachedTarget
         autoInteractTarget = [Math]::Max(1, $AutoInteractCount)
+        useSteamBootstrap = [bool]$UseSteamBootstrap
+        strictSteamRelay = [bool]$StrictSteamRelay
+        steamInviteLobbyId = $SteamInviteLobbyId
+        steamInviteHostId = $SteamInviteHostId
+        steamBootstrapAppliedInClient = $steamBootstrapAppliedInClient
+        steamBinderAppliedInClient = $steamBinderAppliedInClient
+        steamFallbackInClient = $steamFallbackInClient
+        steamPass = $steamPass
         clientLog = $clientLog
         hostEditorLog = $HostEditorLogPath
         hostDeltaLength = $hostDeltaText.Length

@@ -78,14 +78,21 @@ namespace InterStella.Game.Netcode.Runtime
                     return false;
                 }
 
-                switch (_startupMode)
+                try
                 {
-                    case StartupMode.ClientOnly:
-                        return _networkManager.IsClientStarted;
-                    case StartupMode.ServerOnly:
-                        return _networkManager.IsServerStarted;
-                    default:
-                        return _networkManager.IsHostStarted;
+                    switch (_startupMode)
+                    {
+                        case StartupMode.ClientOnly:
+                            return _networkManager.IsClientStarted;
+                        case StartupMode.ServerOnly:
+                            return _networkManager.IsServerStarted;
+                        default:
+                            return _networkManager.IsHostStarted;
+                    }
+                }
+                catch (NullReferenceException)
+                {
+                    return false;
                 }
             }
         }
@@ -325,6 +332,15 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 _steamRelayTransportBinderBehaviour = GetComponent<SteamRelayLoopbackTransportBinder>();
             }
+
+            if (_steamRelayTransportBinderBehaviour == null)
+            {
+                Component interfaceComponent = GetComponent(typeof(ISteamRelayTransportBinder));
+                if (interfaceComponent is MonoBehaviour binderBehaviour)
+                {
+                    _steamRelayTransportBinderBehaviour = binderBehaviour;
+                }
+            }
         }
 
         private bool TryApplySteamRelayBootstrap(out bool relayApplied, out string details)
@@ -332,6 +348,7 @@ namespace InterStella.Game.Netcode.Runtime
             relayApplied = false;
             details = string.Empty;
 
+            ResolveSteamRelayTransportBinderIfMissing();
             if (!(_steamRelayTransportBinderBehaviour is ISteamRelayTransportBinder transportBinder))
             {
                 details = "Steam relay bootstrap requested but no ISteamRelayTransportBinder is configured.";

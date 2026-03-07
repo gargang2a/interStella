@@ -967,3 +967,45 @@ Gate 판정:
 회귀 테스트:
 - 신규 테스트: `SteamRelayLoopbackTransportBinderTests` 2건
 - EditMode 최신 summary: `total=11, passed=11, failed=0`
+
+### 2026-03-07 23:08 (KST)
+## Steam Strict 상호작용 회귀 안정화 가이드
+대상 파일:
+- `Assets/Game/Netcode/Runtime/FishNetScenePlayerAssigner.cs`
+- `.codex/workflows/netcode/run-interaction-regression.ps1`
+
+목적:
+- Steam strict 경로에서 "RPC 수락은 되었지만 상호작용 커밋/납품이 0건"으로 실패하던 회귀를 결정적으로 재현/검증 가능 상태로 고정
+
+서버 시드 동작(권한: host/server):
+- 원격 슬롯(기본 `slot 1`) 배정 직후 회귀 보조 시드 수행
+  - `Scrap_03`를 PlayerB carry socket에 선지급
+  - `RepairStation`을 PlayerB 전방(`_regressionSeedStationDistance`)으로 재배치
+  - 로그 출력: `[FishNetScenePlayerAssigner] Regression seed ready for slot ...`
+
+회귀 summary 추가 필드:
+- `acceptedAnyCount`
+- `acceptedUncommittedCount`
+- `regressionSeedAppliedInHost`
+
+실행 명령:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1 -UseSteamBootstrap -StrictSteamRelay
+```
+
+PASS 기준(핵심):
+- `assignedClientDetected=true`
+- `ownerBoundaryPass=true`
+- `acceptedCommittedCount >= 1`
+- `deliveryAcceptedCount >= 1`
+- (`UseSteamBootstrap`) `steamBootstrapAppliedInClient=true` and `steamBinderAppliedInClient=true`
+- (`StrictSteamRelay`) `steamFallbackInClient=false`
+
+최신 증적:
+- summary: `Logs/interaction-regression-summary-20260307-230730.json`
+- 결과:
+  - `passed=true`
+  - `acceptedCommittedCount=1`
+  - `deliveryAcceptedCount=1`
+  - `regressionSeedAppliedInHost=true`
+  - `steamPass=true`

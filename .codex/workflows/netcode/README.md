@@ -39,10 +39,26 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interact
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1 -PostInteractWaitSec 40 -AutoInteractCount 2
 ```
 
+Steam relay binder smoke (client bootstrap path):
+
+```powershell
+# Steam bootstrap + strict relay (no direct fallback expected)
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1 `
+  -UseSteamBootstrap `
+  -StrictSteamRelay `
+  -SteamInviteLobbyId "local-regression" `
+  -SteamInviteHostId "127.0.0.1:7770" `
+  -PostInteractWaitSec 55 `
+  -AutoInteractCount 2
+```
+
 Validation targets:
 - owner interaction request accepted with caller/owner parity
 - at least one committed interaction
 - at least one repair delivery accepted log
+- when `-UseSteamBootstrap`:
+  - client log contains Steam bootstrap + binder applied logs
+  - strict mode (`-StrictSteamRelay`) has no direct fallback log
 
 Prerequisites:
 - Host Unity editor for `C:\Unity\interStella` is running and already in Play mode.

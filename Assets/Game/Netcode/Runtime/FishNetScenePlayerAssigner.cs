@@ -3,6 +3,7 @@ using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Transporting;
 using InterStella.Game.Features.Player;
+using InterStella.Game.Features.Repair;
 using InterStella.Game.Features.Scavenge;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,6 +26,25 @@ namespace InterStella.Game.Netcode.Runtime
 
         [SerializeField]
         private bool _logSlotEvents = true;
+
+        [Header("Regression Assist")]
+        [SerializeField]
+        private bool _seedRemoteSlotForInteractionRegression = true;
+
+        [SerializeField, Min(0)]
+        private int _regressionSeedSlotIndex = 1;
+
+        [SerializeField]
+        private string _regressionSeedScrapName = "Scrap_03";
+
+        [SerializeField]
+        private string _regressionSeedRepairStationName = "RepairStation";
+
+        [SerializeField, Min(0.5f)]
+        private float _regressionSeedStationDistance = 1.8f;
+
+        [SerializeField]
+        private bool _logRegressionSeedEvents = true;
 
         private readonly Dictionary<int, int> _clientToSlot = new Dictionary<int, int>(4);
         private readonly Queue<int> _pendingClientQueue = new Queue<int>(4);
@@ -158,6 +178,8 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 Debug.Log($"[FishNetScenePlayerAssigner] Assigned client {clientId} to slot {slotIndex} ({scenePlayerObject.name}).");
             }
+
+            TrySeedInteractionRegression(slotIndex, bridge);
         }
 
         private void ReleaseSlot(int clientId)
@@ -375,6 +397,88 @@ namespace InterStella.Game.Netcode.Runtime
         {
             GameObject player = GameObject.Find(playerName);
             return player == null ? null : player.GetComponent<NetworkObject>();
+        }
+
+        private void TrySeedInteractionRegression(int slotIndex, PlayerNetworkBridge bridge)
+        {
+            if (!_seedRemoteSlotForInteractionRegression || slotIndex != _regressionSeedSlotIndex || bridge == null)
+            {
+                return;
+            }
+
+            if (!bridge.TryGetComponent(out PlayerCarrySocket carrySocket))
+            {
+                if (_logRegressionSeedEvents)
+                {
+                    Debug.LogWarning($"[FishNetScenePlayerAssigner] Regression seed skipped. {bridge.name} is missing PlayerCarrySocket.");
+                }
+
+                return;
+            }
+
+            GameObject scrapObject = GameObject.Find(_regressionSeedScrapName);
+            GameObject stationObject = GameObject.Find(_regressionSeedRepairStationName);
+            if (scrapObject == null || stationObject == null)
+            {
+                if (_logRegressionSeedEvents)
+                {
+                    Debug.LogWarning($"[FishNetScenePlayerAssigner] Regression seed skipped. Missing scrap='{_regressionSeedScrapName}' or station='{_regressionSeedRepairStationName}'.");
+                }
+
+                return;
+            }
+
+            if (!scrapObject.TryGetComponent(out ScrapItem scrapItem))
+            {
+                if (_logRegressionSeedEvents)
+                {
+                    Debug.LogWarning($"[FishNetScenePlayerAssigner] Regression seed skipped. '{_regressionSeedScrapName}' has no ScrapItem.");
+                }
+
+                return;
+            }
+
+            if (scrapItem.Carrier != null)
+            {
+                scrapItem.Carrier.TryForceDropWithoutImpulse();
+            }
+
+            if (carrySocket.HasItem)
+            {
+                carrySocket.TryForceDropWithoutImpulse();
+            }
+
+            Transform playerTransform = bridge.transform;
+            Vector3 playerForward = playerTransform.forward.sqrMagnitude <= 0.0001f ? Vector3.forward : playerTransform.forward.normalized;
+            Vector3 scrapPosition = playerTransform.position + (playerForward * 1.0f);
+            scrapPosition.y = playerTransform.position.y;
+            scrapItem.SetWorldStateAuthoritative(scrapPosition, simulatePhysics: false);
+
+            if (!carrySocket.TryPickup(scrapItem))
+            {
+                if (_logRegressionSeedEvents)
+                {
+                    Debug.LogWarning($"[FishNetScenePlayerAssigner] Regression seed failed. Could not assign '{_regressionSeedScrapName}' to {bridge.name}.");
+                }
+
+                return;
+            }
+
+            Transform stationTransform = stationObject.transform;
+            Vector3 stationPosition = playerTransform.position + (playerForward * _regressionSeedStationDistance);
+            stationPosition.y = playerTransform.position.y;
+            stationTransform.position = stationPosition;
+            stationTransform.rotation = Quaternion.LookRotation(-playerForward, Vector3.up);
+
+            if (stationObject.TryGetComponent(out RepairStationObjective repairObjective))
+            {
+                repairObjective.ResetObjective();
+            }
+
+            if (_logRegressionSeedEvents)
+            {
+                Debug.Log($"[FishNetScenePlayerAssigner] Regression seed ready for slot {slotIndex}. player={bridge.name}, scrap={scrapObject.name}, station={stationObject.name}.");
+            }
         }
     }
 }
