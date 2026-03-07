@@ -1071,3 +1071,30 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interact
   - `fuelRejectedCountInHost=0`
   - `repairTransientEventCountInClient=1`
   - `tetherDurablePublishedInHost=true`
+
+### 2026-03-08 00:20 (KST)
+## Reconnect + E2E strict 통합 가이드
+대상 파일:
+- `.codex/workflows/netcode/run-reconnect-regression.ps1`
+- `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
+
+변경 요약:
+- reconnect 스크립트가 Steam strict 인자와 durable/transient 판정을 지원
+  - 기본 `ReconnectAutoInteractCount=0` (재접속 핵심 + fuel/tether marker 검증)
+  - 필요 시 `ReconnectAutoInteractCount>0`로 repair transient 검증까지 확장
+- e2e 스크립트가 interaction strict 단계를 내장
+  - 실행 순서: `sync -> interaction regression -> reconnect regression`
+  - 출력에 interaction/reconnect summary 경로를 함께 반환
+
+권장 실행:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 -UseSteamBootstrap -StrictSteamRelay
+```
+
+최신 증적:
+- interaction: `Logs/interaction-regression-summary-20260308-001655.json`
+  - `passed=true`, `durableTransientPass=true`, `steamPass=true`
+- reconnect: `Logs/reconnect-regression-summary-20260308-001754.json`
+  - `passed=true`, `reconnectPass=true`, `durableTransientPass=true`, `steamPass=true`
+- e2e:
+  - `E2E_SYNC_REGRESSION_PASS RECONNECT_SUMMARY=...001754.json INTERACTION_SUMMARY=...001655.json`

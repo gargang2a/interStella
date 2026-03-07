@@ -6,6 +6,11 @@ param(
     [string]$LogDirectory = "C:\Unity\interStella\Logs",
     [int]$ClientBootTimeoutSec = 240,
     [int]$PostReconnectWaitSec = 95,
+    [int]$ReconnectAutoInteractCount = 0,
+    [switch]$UseSteamBootstrap,
+    [switch]$StrictSteamRelay,
+    [string]$SteamInviteLobbyId = "local-regression",
+    [string]$SteamInviteHostId = "127.0.0.1:7770",
     [switch]$KeepClientRunning
 )
 
@@ -164,8 +169,16 @@ function Start-ReconnectClient {
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
         [Parameter(Mandatory = $true)]
-        [string]$LogPath
+        [string]$LogPath,
+        [int]$InteractCount = 0,
+        [bool]$UseSteamBootstrap = $false,
+        [bool]$StrictSteamRelay = $false,
+        [string]$InviteLobbyId = "",
+        [string]$InviteHostId = ""
     )
+
+    $autoInteractEnabled = $InteractCount -gt 0
+    $autoInteractTarget = [Math]::Max(1, $InteractCount)
 
     $arguments = @(
         "-projectPath", $ProjectPath,
@@ -178,10 +191,27 @@ function Start-ReconnectClient {
         "-interstella-mode", "client",
         "-interstella-address", "127.0.0.1",
         "-interstella-port", "7770",
-        "-interstella-auto-interact", "0",
+        "-interstella-auto-interact", ($(if ($autoInteractEnabled) { "1" } else { "0" })),
+        "-interstella-auto-interact-count", $autoInteractTarget.ToString(),
         "-executeMethod", "InterStella.EditorTools.InterStellaClientAutoPlayBootstrap.StartClientPlay",
         "-logFile", $LogPath
     )
+
+    if ($UseSteamBootstrap) {
+        $arguments += @("-interstella-provider", "steam")
+
+        if (-not [string]::IsNullOrWhiteSpace($InviteLobbyId)) {
+            $arguments += @("-interstella-invite-lobby-id", $InviteLobbyId)
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($InviteHostId)) {
+            $arguments += @("-interstella-invite-host-id", $InviteHostId)
+        }
+
+        if ($StrictSteamRelay) {
+            $arguments += @("-interstella-steam-strict-relay", "1")
+        }
+    }
 
     return Start-Process -FilePath $UnityPath -ArgumentList $arguments -PassThru
 }
@@ -210,7 +240,17 @@ $summaryPath = Join-Path $LogDirectory "reconnect-regression-summary-$stamp.json
 $exceptionMessage = ""
 
 try {
-    $clientA = Start-ReconnectClient -UnityPath $UnityEditorPath -ProjectPath $ClientProjectPath -HubSessionId $hubSessionId -AccessToken $accessToken -LogPath $clientALog
+    $clientA = Start-ReconnectClient `
+        -UnityPath $UnityEditorPath `
+        -ProjectPath $ClientProjectPath `
+        -HubSessionId $hubSessionId `
+        -AccessToken $accessToken `
+        -LogPath $clientALog `
+        -InteractCount 0 `
+        -UseSteamBootstrap $UseSteamBootstrap `
+        -StrictSteamRelay $StrictSteamRelay `
+        -InviteLobbyId $SteamInviteLobbyId `
+        -InviteHostId $SteamInviteHostId
     $clientAReady = Wait-ClientReady -LogPath $clientALog -ClientProcess $clientA -TimeoutSec $ClientBootTimeoutSec
     if (-not $clientAReady.Ready) {
         throw "Client A failed to become ready. Reason=$($clientAReady.Reason) Log=$clientALog"
@@ -220,7 +260,17 @@ try {
         Stop-Process -Id $clientA.Id -Force
     }
 
-    $clientB = Start-ReconnectClient -UnityPath $UnityEditorPath -ProjectPath $ClientProjectPath -HubSessionId $hubSessionId -AccessToken $accessToken -LogPath $clientBLog
+    $clientB = Start-ReconnectClient `
+        -UnityPath $UnityEditorPath `
+        -ProjectPath $ClientProjectPath `
+        -HubSessionId $hubSessionId `
+        -AccessToken $accessToken `
+        -LogPath $clientBLog `
+        -InteractCount $ReconnectAutoInteractCount `
+        -UseSteamBootstrap $UseSteamBootstrap `
+        -StrictSteamRelay $StrictSteamRelay `
+        -InviteLobbyId $SteamInviteLobbyId `
+        -InviteHostId $SteamInviteHostId
     $clientBReady = Wait-ClientReady -LogPath $clientBLog -ClientProcess $clientB -TimeoutSec $ClientBootTimeoutSec
     if (-not $clientBReady.Ready) {
         throw "Client B failed to become ready. Reason=$($clientBReady.Reason) Log=$clientBLog"
@@ -229,10 +279,73 @@ try {
     Start-Sleep -Seconds $PostReconnectWaitSec
 
     $hostDeltaText = Read-AppendedText -Path $HostEditorLogPath -StartOffset $startOffset
+    $clientBLogText = if (Test-Path $clientBLog -PathType Leaf) { Get-Content $clientBLog -Raw } else { "" }
 
     $queueMatch = [Regex]::Match($hostDeltaText, "No available slot for client \d+\. Queued for reassignment\.")
     $releaseMatches = [Regex]::Matches($hostDeltaText, "Released slot 1 from client (\d+); ownership removed from PlayerB\.")
     $assignMatches = [Regex]::Matches($hostDeltaText, "Assigned client (\d+) to slot 1 \(PlayerB\)\.")
+    $acceptedAnyMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\. caller=(\-?\d+), owner=(\-?\d+), committed=(True|False), object=([^\r\n]+)")
+    $acceptedCommittedMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\..*committed=True")
+    $deliveryMatches = [Regex]::Matches($hostDeltaText, "\[RepairStationObjective\] Delivery accepted\. delivered=(\d+)/(\d+)")
+    $fuelTransientAcceptedInHost = $hostDeltaText -match "\[PlayerFuelNetworkState\] Transient fuel submit accepted\."
+    $fuelRejectedMatches = [Regex]::Matches($hostDeltaText, "\[PlayerFuelNetworkState\] Fuel submit rejected\.")
+    $repairDurablePublishedInHost = $hostDeltaText -match "\[RepairObjectiveNetworkState\] Durable repair sync published\."
+    $tetherDurablePublishedInHost = $hostDeltaText -match "\[TetherNetworkStateReplicator\] Durable tether (sync published|snapshot)\."
+
+    $fuelDurableAppliedInClientB = $clientBLogText -match "\[PlayerFuelNetworkState\] Durable fuel sync applied\."
+    $repairTransientMatchesInClientB = [Regex]::Matches($clientBLogText, "\[RepairObjectiveNetworkState\] Transient delivery event received\. delivered=(\d+)/(\d+)")
+    $repairTransientEventCountInClientB = $repairTransientMatchesInClientB.Count
+    $tetherDurableAppliedInClientB = $clientBLogText -match "\[TetherNetworkStateReplicator\] Durable tether sync applied\."
+    $steamBootstrapAppliedInClientB = $clientBLogText -match "\[SteamSessionService\] Applied Steam bootstrap to FishNet\..*binder=True"
+    $steamBinderAppliedInClientB = $clientBLogText -match "\[FishNetSessionService\] Steam relay transport binder applied\."
+    $steamFallbackInClientB = $clientBLogText -match "Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled\."
+
+    $repairTransientDuplicateDetectedInClientB = $false
+    $repairTransientMonotonicInClientB = $true
+    $repairLastDeliveredInClientB = -1
+    $repairDeliveredSetInClientB = @{}
+    foreach ($repairTransientMatch in $repairTransientMatchesInClientB) {
+        $deliveredCount = [int]$repairTransientMatch.Groups[1].Value
+        if ($repairDeliveredSetInClientB.ContainsKey($deliveredCount)) {
+            $repairTransientDuplicateDetectedInClientB = $true
+        }
+        else {
+            $repairDeliveredSetInClientB[$deliveredCount] = $true
+        }
+
+        if ($repairLastDeliveredInClientB -gt $deliveredCount) {
+            $repairTransientMonotonicInClientB = $false
+        }
+
+        $repairLastDeliveredInClientB = $deliveredCount
+    }
+
+    $deliveryDuplicateDetectedInHost = $false
+    $deliveryMonotonicInHost = $true
+    $lastDeliveredInHost = -1
+    $deliverySetInHost = @{}
+    foreach ($deliveryMatch in $deliveryMatches) {
+        $deliveredInHost = [int]$deliveryMatch.Groups[1].Value
+        if ($deliverySetInHost.ContainsKey($deliveredInHost)) {
+            $deliveryDuplicateDetectedInHost = $true
+        }
+        else {
+            $deliverySetInHost[$deliveredInHost] = $true
+        }
+
+        if ($lastDeliveredInHost -gt $deliveredInHost) {
+            $deliveryMonotonicInHost = $false
+        }
+
+        $lastDeliveredInHost = $deliveredInHost
+    }
+
+    $authorityMismatchAcceptedCount = 0
+    foreach ($acceptedAnyMatch in $acceptedAnyMatches) {
+        if ($acceptedAnyMatch.Groups[1].Value -ne $acceptedAnyMatch.Groups[2].Value) {
+            $authorityMismatchAcceptedCount++
+        }
+    }
 
     $releaseMatch = $null
     if ($releaseMatches.Count -gt 0) {
@@ -249,18 +362,87 @@ try {
         }
     }
 
-    $passed = ($queueMatch.Success -and $releaseMatch -ne $null -and $assignAfterRelease -ne $null)
+    $reconnectPass = ($queueMatch.Success -and $releaseMatch -ne $null -and $assignAfterRelease -ne $null)
+
+    $interactionTarget = [Math]::Max(1, $ReconnectAutoInteractCount)
+    $autoInteractReachedTargetInClientB = if ($ReconnectAutoInteractCount -gt 0) {
+        $clientBLogText -match "successes=\d+/$interactionTarget"
+    }
+    else {
+        $true
+    }
+
+    $interactionPass = $ReconnectAutoInteractCount -le 0 `
+        -or (($acceptedCommittedMatches.Count -ge 1) -and ($deliveryMatches.Count -ge 1) -and $autoInteractReachedTargetInClientB)
+
+    $durableTransientPass = $fuelTransientAcceptedInHost `
+        -and ($fuelRejectedMatches.Count -eq 0) `
+        -and $fuelDurableAppliedInClientB `
+        -and $tetherDurablePublishedInHost `
+        -and $tetherDurableAppliedInClientB
+
+    if ($ReconnectAutoInteractCount -gt 0) {
+        $durableTransientPass = $durableTransientPass `
+            -and $repairDurablePublishedInHost `
+            -and ($repairTransientEventCountInClientB -ge 1) `
+            -and (-not $deliveryDuplicateDetectedInHost) `
+            -and $deliveryMonotonicInHost `
+            -and (-not $repairTransientDuplicateDetectedInClientB) `
+            -and $repairTransientMonotonicInClientB
+    }
+
+    $steamPass = $true
+    if ($UseSteamBootstrap) {
+        $steamPass = $steamBootstrapAppliedInClientB -and $steamBinderAppliedInClientB
+        if ($StrictSteamRelay) {
+            $steamPass = $steamPass -and (-not $steamFallbackInClientB)
+        }
+    }
+
+    $passed = $reconnectPass `
+        -and $interactionPass `
+        -and $durableTransientPass `
+        -and $steamPass `
+        -and ($authorityMismatchAcceptedCount -eq 0)
     $releasedClientId = if ($releaseMatch -ne $null) { $releaseMatch.Groups[1].Value } else { "" }
     $reassignedClientId = if ($assignAfterRelease -ne $null) { $assignAfterRelease.Groups[1].Value } else { "" }
 
     $summary = [ordered]@{
         timestamp = (Get-Date).ToString("s")
         passed = $passed
+        reconnectPass = $reconnectPass
+        interactionPass = $interactionPass
+        durableTransientPass = $durableTransientPass
+        steamPass = $steamPass
         queueDetected = $queueMatch.Success
         releaseDetected = ($releaseMatch -ne $null)
         reassignedAfterReleaseDetected = ($assignAfterRelease -ne $null)
         releasedClientId = $releasedClientId
         reassignedClientId = $reassignedClientId
+        authorityMismatchAcceptedCount = $authorityMismatchAcceptedCount
+        acceptedCommittedCount = $acceptedCommittedMatches.Count
+        deliveryAcceptedCount = $deliveryMatches.Count
+        deliveryDuplicateDetectedInHost = $deliveryDuplicateDetectedInHost
+        deliveryMonotonicInHost = $deliveryMonotonicInHost
+        fuelTransientAcceptedInHost = $fuelTransientAcceptedInHost
+        fuelRejectedCountInHost = $fuelRejectedMatches.Count
+        fuelDurableAppliedInClientB = $fuelDurableAppliedInClientB
+        repairDurablePublishedInHost = $repairDurablePublishedInHost
+        repairTransientEventCountInClientB = $repairTransientEventCountInClientB
+        repairTransientDuplicateDetectedInClientB = $repairTransientDuplicateDetectedInClientB
+        repairTransientMonotonicInClientB = $repairTransientMonotonicInClientB
+        tetherDurablePublishedInHost = $tetherDurablePublishedInHost
+        tetherDurableAppliedInClientB = $tetherDurableAppliedInClientB
+        reconnectAutoInteractCount = $ReconnectAutoInteractCount
+        repairCheckRequired = ($ReconnectAutoInteractCount -gt 0)
+        autoInteractReachedTargetInClientB = $autoInteractReachedTargetInClientB
+        useSteamBootstrap = [bool]$UseSteamBootstrap
+        strictSteamRelay = [bool]$StrictSteamRelay
+        steamInviteLobbyId = $SteamInviteLobbyId
+        steamInviteHostId = $SteamInviteHostId
+        steamBootstrapAppliedInClientB = $steamBootstrapAppliedInClientB
+        steamBinderAppliedInClientB = $steamBinderAppliedInClientB
+        steamFallbackInClientB = $steamFallbackInClientB
         clientALog = $clientALog
         clientBLog = $clientBLog
         hostEditorLog = $HostEditorLogPath

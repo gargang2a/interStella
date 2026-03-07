@@ -870,3 +870,26 @@
     - `tetherDurablePublishedInHost=true`
 - [x] EditMode 회귀 테스트 재확인
   - `total=11, passed=11, failed=0`
+
+### 2026-03-08 00:20 (KST) 진행 스냅샷
+- [x] reconnect 회귀 스크립트 확장
+  - 파일: `.codex/workflows/netcode/run-reconnect-regression.ps1`
+  - 추가:
+    - Steam strict 인자 지원(`-UseSteamBootstrap`, `-StrictSteamRelay`)
+    - durable/transient 판정 필드 추가(`durableTransientPass`, fuel/tether marker, authority mismatch)
+    - reconnect 측 auto-interact를 옵션화(`-ReconnectAutoInteractCount`, 기본 0)
+- [x] E2E 래퍼 통합 확장
+  - 파일: `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
+  - 순서: `sync -> interaction regression -> reconnect regression`
+  - 출력: interaction/reconnect summary 경로 동시 출력
+- [x] Steam strict 실행 검증 PASS
+  - reconnect 단독:
+    - `RECONNECT_REGRESSION_PASS SUMMARY=...001341.json`
+    - `durableTransientPass=true`, `steamPass=true`
+  - e2e 통합:
+    - `E2E_SYNC_REGRESSION_PASS ...`
+    - interaction summary: `Logs/interaction-regression-summary-20260308-001655.json`
+    - reconnect summary: `Logs/reconnect-regression-summary-20260308-001754.json`
+- [ ] 다음 단계
+  - reconnect에서 `ReconnectAutoInteractCount > 0` 경로(수리 transient 포함)의 안정화 라운드 1회
+  - Steam SDK 실제 binder 구현체 스캐폴드 시작

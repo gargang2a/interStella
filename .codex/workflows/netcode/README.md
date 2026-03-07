@@ -15,6 +15,9 @@ Usage:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1
 
+# Optional: include reconnect-side interaction/repair checks after reassignment
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1 -ReconnectAutoInteractCount 1
+
 # Slower machines: extend boot timeout
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-reconnect-regression.ps1 -ClientBootTimeoutSec 360
 ```
@@ -26,6 +29,9 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync
 
 # Retry reconnect regression on transient startup failures
 powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 -RegressionMaxAttempts 3 -RetryDelaySec 10
+
+# Steam strict end-to-end (sync -> interaction strict -> reconnect)
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1 -UseSteamBootstrap -StrictSteamRelay
 ```
 
 The wrapper fails fast if host is not listening on UDP `7770`.
@@ -60,8 +66,11 @@ Validation targets:
   - client log contains Steam bootstrap + binder applied logs
   - strict mode (`-StrictSteamRelay`) has no direct fallback log
 - durable vs transient markers:
-  - host: fuel transient accept, repair durable publish, tether durable publish/snapshot
-  - client: fuel durable apply, repair transient delivery event, tether durable apply
+  - host: fuel transient accept, tether durable publish/snapshot
+  - client: fuel durable apply, tether durable apply
+  - when reconnect auto-interact is enabled (`-ReconnectAutoInteractCount > 0`):
+    - host: repair durable publish + delivery sequence checks
+    - client: repair transient delivery event checks
   - no host-side delivery duplicate/reorder
 
 Prerequisites:
