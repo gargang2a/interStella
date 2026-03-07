@@ -596,3 +596,21 @@
 - [ ] PR 생성
   - 토큰 미설정(GITHUB_PAT_TOKEN)으로 자동 생성 대신 URL fallback 사용
   - 생성 URL: https://github.com/gargang2a/interStella/compare/main...codex/e2e-workflow-orchestrator?expand=1
+
+### 2026-03-07 17:36 (KST) 진행 스냅샷
+- [x] PR #6 생성 및 머지 완료
+  - PR: https://github.com/gargang2a/interStella/pull/6
+  - merge commit: f3a33c6 (`merge: PR #6 e2e-workflow-orchestrator`)
+- [x] `main` 기준선 동기화 완료
+  - local main = origin/main = f3a33c6
+- [x] Host/Client E2E 재검증 PASS (머지 후)
+  - 명령: `run-e2e-sync-regression.ps1 -RegressionMaxAttempts 3 -RetryDelaySec 10`
+  - 결과: `E2E_SYNC_REGRESSION_PASS`
+  - summary: `Logs/reconnect-regression-summary-20260307-173410.json`
+  - releasedClientId=2, reassignedClientId=4
+- [x] 운영 블로커 해소
+  - Unity MCP로 Host Play 모드 진입 후 UDP 7770 listening 확인
+  - 검증 종료 후 Play 모드 stop 처리
+- [ ] 다음 단계
+  - Steam 로비/초대/릴레이 통합 전 체크리스트 고정
+  - 2프로세스 수동 체감 검증 결과 캡처(시점 전환/이동/수리 완주)
