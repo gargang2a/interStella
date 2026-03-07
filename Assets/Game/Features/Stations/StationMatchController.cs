@@ -35,7 +35,7 @@ namespace InterStella.Game.Features.Stations
 
         private void Awake()
         {
-            _sessionService = _sessionServiceBehaviour as ISessionService;
+            _sessionService = ResolveSessionService();
             _remainingSeconds = Mathf.Max(0f, _matchDurationSeconds);
         }
 
@@ -143,6 +143,43 @@ namespace InterStella.Game.Features.Stations
                     fuel.ResetToStartupFuel();
                 }
             }
+        }
+
+        private ISessionService ResolveSessionService()
+        {
+            ISessionService configured = _sessionServiceBehaviour as ISessionService;
+            if (configured is SteamSessionService)
+            {
+                return configured;
+            }
+
+            SteamSessionService discoveredSteam = FindObjectOfType<SteamSessionService>();
+            if (discoveredSteam != null)
+            {
+                _sessionServiceBehaviour = discoveredSteam;
+                Debug.Log("[StationMatchController] Session service switched to discovered SteamSessionService.");
+                return discoveredSteam;
+            }
+
+            if (configured != null)
+            {
+                return configured;
+            }
+
+            MonoBehaviour[] behaviours = FindObjectsOfType<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour is ISessionService discoveredSession)
+                {
+                    _sessionServiceBehaviour = behaviour;
+                    Debug.Log($"[StationMatchController] Session service auto-resolved to {behaviour.GetType().Name}.");
+                    return discoveredSession;
+                }
+            }
+
+            Debug.LogWarning("[StationMatchController] No ISessionService was found. Match will run without network session control.");
+            return null;
         }
     }
 }

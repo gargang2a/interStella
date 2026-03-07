@@ -751,3 +751,22 @@
   - 기존 `NetworkSequenceComparerTests` 6건 + 신규 `SteamSessionServiceTests` 3건 통과
 - [ ] 다음 단계
   - Steam 어댑터 씬 통합(서비스 참조 전환) 전/후 회귀 스모크 비교 로그 누적
+
+### 2026-03-07 21:45 (KST) 진행 스냅샷
+- [x] Steam 어댑터 씬 통합 1차 완료
+  - `VerticalSlice_MVP`의 `MatchSystems`에 `SteamSessionService` 컴포넌트 추가
+  - 씬 저장: `Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity`
+- [x] 세션 서비스 해석 경계 보강
+  - 파일: `Assets/Game/Features/Stations/StationMatchController.cs`
+  - 동작: 씬에 `SteamSessionService`가 존재하면 `_sessionServiceBehaviour` 설정값보다 우선 사용
+- [x] 통합 PlayMode 스모크 PASS (로그 체인)
+  - `[StationMatchController] Session service switched to discovered SteamSessionService.`
+  - `[SteamSessionService] Host lobby created ...`
+  - `[SteamSessionService] Applied Steam bootstrap to FishNet. provider=SteamRelay ...`
+  - `[FishNetSessionService] Steam relay bootstrap requested ...`
+  - `[FishNetSessionService] Falling back to direct endpoint ...`
+  - `[SteamSessionService] Session started ... networkHost=True`
+- [x] 회귀 테스트
+  - EditMode: total=9, passed=9, failed=0
+- [ ] 다음 단계
+  - Steam SDK/Relay transport 실제 wiring 연결 후 fallback 비활성(`_allowSteamFallbackToDirect=false`) 경로 실검증

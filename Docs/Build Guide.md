@@ -921,3 +921,24 @@ Gate 판정:
 - 구성:
   - `NetworkSequenceComparerTests`: 6 passed
   - `SteamSessionServiceTests`: 3 passed
+
+### 2026-03-07 21:45 (KST)
+## Steam 어댑터 씬 통합 스모크 (VerticalSlice_MVP)
+통합 대상:
+- 씬: `Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity`
+- GameObject: `MatchSystems`
+- 추가 컴포넌트: `SteamSessionService`
+
+검증 절차:
+1. Unity PlayMode 진입
+2. 콘솔에서 다음 로그 체인 확인
+   - `StationMatchController`가 `SteamSessionService`로 전환
+   - `SteamSessionService` 로비 준비/부트스트랩 적용 로그
+   - `FishNetSessionService` SteamRelay 요청/Direct fallback 로그
+   - 최종 `SteamSessionService Session started ... networkHost=True`
+3. PlayMode 종료
+4. EditMode 테스트(`run_tests EditMode`) 재실행
+
+최신 결과:
+- 통합 로그 체인 PASS
+- EditMode summary: `total=9, passed=9, failed=0`

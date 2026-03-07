@@ -327,6 +327,7 @@ GameObject:
   - component: {fileID: 284635961}
   - component: {fileID: 284635960}
   - component: {fileID: 284635963}
+  - component: {fileID: 284635964}
   m_Layer: 0
   m_Name: MatchSystems
   m_TagString: Untagged
@@ -425,10 +426,17 @@ MonoBehaviour:
   _startupMode: 0
   _clientAddress: 127.0.0.1
   _port: 7770
+  _connectionProvider: 0
+  _steamLobbyId: 
+  _steamHostId: 
+  _allowSteamFallbackToDirect: 0
   _allowRuntimeOverride: 1
   _modeArgument: interstella-mode
   _addressArgument: interstella-address
   _portArgument: interstella-port
+  _providerArgument: interstella-provider
+  _lobbyIdArgument: interstella-lobby-id
+  _steamHostIdArgument: interstella-steam-host-id
 --- !u!114 &284635962
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -469,6 +477,32 @@ MonoBehaviour:
   - {fileID: 531697750}
   _despawnOnDisconnect: 0
   _logSlotEvents: 1
+--- !u!114 &284635964
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4abed8b4dcf201f48aa5382d0f497fb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _networkSessionBehaviour: {fileID: 284635961}
+  _autoCreateLobbyForHost: 1
+  _autoAcceptInviteForClient: 1
+  _allowDirectFallbackIfRelayUnavailable: 1
+  _localSteamUserId: editor-local-user
+  _queuedInviteLobbyId: 
+  _queuedInviteHostSteamId: 
+  _activeLobbyId: 
+  _activeHostSteamId: 
+  _allowRuntimeOverride: 1
+  _inviteLobbyIdArgument: interstella-invite-lobby-id
+  _inviteHostIdArgument: interstella-invite-host-id
+  _selfSteamIdArgument: interstella-steam-self-id
+  _lifecycleState: 0
 --- !u!1 &289819984
 GameObject:
   m_ObjectHideFlags: 0
@@ -505,6 +539,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _requiredScrapCount: 3
   _lockAfterComplete: 1
+  _logDeliveries: 1
 --- !u!23 &289819986
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -608,6 +643,7 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 0}
   _repairObjective: {fileID: 289819985}
   _syncInterval: 0.1
+  _logTransientDeliveryEvents: 0
 --- !u!114 &289819991
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1091,6 +1127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _inputReader: {fileID: 531697742}
   _playerFuel: {fileID: 531697741}
+  _networkBridge: {fileID: 531697737}
   _thrustAcceleration: 8
   _boostMultiplier: 2
   _brakeDamping: 0.9
@@ -1407,6 +1444,7 @@ MonoBehaviour:
   _playerInteraction: {fileID: 531697739}
   _serverRequestCooldown: 0.05
   _logRejectedRequests: 0
+  _logAcceptedRequests: 1
 --- !u!1 &781150863
 GameObject:
   m_ObjectHideFlags: 0
@@ -3436,6 +3474,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _inputReader: {fileID: 2137637283}
   _playerFuel: {fileID: 2137637282}
+  _networkBridge: {fileID: 2137637278}
   _thrustAcceleration: 8
   _boostMultiplier: 2
   _brakeDamping: 0.9
@@ -3752,6 +3791,7 @@ MonoBehaviour:
   _playerInteraction: {fileID: 2137637280}
   _serverRequestCooldown: 0.05
   _logRejectedRequests: 0
+  _logAcceptedRequests: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
