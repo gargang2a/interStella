@@ -623,3 +623,17 @@
   - PR 변경 패치 휴리스틱 점검 후 marker 기반 upsert 코멘트 생성/갱신
 - [ ] 후속
   - 워크플로우 머지 후 PR #8 또는 신규 PR에서 Actions 실행/코멘트 생성 실검증
+
+### 2026-03-07 19:16 (KST) 진행 스냅샷
+- [x] fallback PR 리뷰 봇 실검증 완료
+  - PR #9에서 워크플로우 실행 성공: `PR Guardrails Review`
+  - run: https://github.com/gargang2a/interStella/actions/runs/22797087540
+  - 코멘트 작성자: `github-actions[bot]` (`<!-- interstella-pr-guardrails -->`)
+- [x] main 머지 후 기존 PR 재검증 완료
+  - PR #8에 재트리거 커밋 push 후 동일 워크플로우 실행 성공
+  - run: https://github.com/gargang2a/interStella/actions/runs/22797135237
+  - guardrails 코멘트 생성 확인
+- [x] 테스트 PR 정리
+  - PR #8 closed (probe 목적 완료, 비머지)
+- [ ] 후속
+  - 필요 시 guardrails 휴리스틱 룰(권한/핫패스/테더 의미) 프로젝트 맞춤 확장
