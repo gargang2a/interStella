@@ -6,6 +6,7 @@ This folder contains repeatable local automation scripts for interStella.
 - `.codex/workflows/git/auto-branch.ps1`
 - `.codex/workflows/git/auto-pull.ps1`
 - `.codex/workflows/git/auto-commit.ps1`
+- `.codex/workflows/git/auto-pr.ps1`
 - `.codex/workflows/git/auto-workflow.ps1`
 - `.codex/workflows/git/setup-github-mcp.ps1`
 

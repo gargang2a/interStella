@@ -569,3 +569,19 @@
   - 결과: `E2E_SYNC_REGRESSION_PASS`
   - summary: `Logs/reconnect-regression-summary-20260307-033146.json`
   - releasedClientId=1, reassignedClientId=2
+
+### 2026-03-07 12:52 (KST) 진행 스냅샷
+- [x] Git 자동화에 PR 생성 단계 추가
+  - 신규: .codex/workflows/git/auto-pr.ps1
+  - 기능: GITHUB_PAT_TOKEN 존재 시 GitHub REST API로 PR 생성, 미존재 시 Compare URL 출력
+- [x] one-shot 워크플로우에 PR 연동 옵션 추가
+  - 수정: .codex/workflows/git/auto-workflow.ps1
+  - 신규 옵션: -CreatePr, -PrBase, -PrTitle, -PrBody, -PrDraft
+- [x] 워크플로우 문서 갱신
+  - .codex/workflows/git/README.md
+  - .codex/workflows/README.md
+- [x] 실행 검증
+  - 명령: powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-pr.ps1 -Base main
+  - 결과: TOKEN_MISSING_GITHUB_PAT_TOKEN + PR_CREATE_URL=.../compare/main...codex/e2e-workflow-orchestrator?expand=1
+- [ ] 후속
+  - 사용자 환경변수 GITHUB_PAT_TOKEN 설정 후 API 기반 PR 자동 생성까지 실검증

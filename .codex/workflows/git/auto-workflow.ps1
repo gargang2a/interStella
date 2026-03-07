@@ -3,7 +3,12 @@ param(
     [string]$Task,
     [string]$Base = "main",
     [string]$CommitMessage = "",
-    [switch]$Push
+    [switch]$Push,
+    [switch]$CreatePr,
+    [string]$PrBase = "",
+    [string]$PrTitle = "",
+    [string]$PrBody = "",
+    [switch]$PrDraft
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,4 +24,13 @@ if (-not [string]::IsNullOrWhiteSpace($CommitMessage)) {
 }
 else {
     Write-Output "BRANCH_READY_NO_COMMIT"
+}
+
+if ($CreatePr) {
+    $effectivePrBase = $PrBase
+    if ([string]::IsNullOrWhiteSpace($effectivePrBase)) {
+        $effectivePrBase = $Base
+    }
+
+    & (Join-Path $root "auto-pr.ps1") -Base $effectivePrBase -Title $PrTitle -Body $PrBody -Draft:$PrDraft
 }
