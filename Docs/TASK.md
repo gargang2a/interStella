@@ -649,3 +649,14 @@
   - P1 이슈 0건 확인
 - [ ] 수동 체감 검증 캡처
   - 1/2/3 시점 전환, 이동 체감, 수리 납품 루프
+
+### 2026-03-07 19:37 (KST) 진행 스냅샷
+- [x] Steam 게이트 실행 v1 (자동 검증)
+  - E2E PASS: `Logs/reconnect-regression-summary-20260307-193420.json`
+  - 운영 품질 PASS: open P1=0, guardrails run success
+- [ ] 수동 검증 라운드(필수)
+  - Gate 2: Owner 입력/Remote 관찰 경계
+  - Gate 3: 수집/운반/수리 루프 1회 완주
+  - Gate 4: 1/2/3 시점 전환 + 조작감/가시성
+- [ ] 최종 Go/No-Go 갱신
+  - Gate 2/3/4 PASS 시 Steam 통합 착수

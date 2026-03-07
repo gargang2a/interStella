@@ -766,3 +766,33 @@ Gate 항목(모두 PASS 필요):
 Go/No-Go 규칙:
 - 모든 Gate PASS + P1 0건이면 Steam 로비/초대/릴레이 통합 착수
 - 하나라도 FAIL이면 Steam 통합 보류, 실패 항목 먼저 수정
+
+### 2026-03-07 19:37 (KST)
+## Steam 게이트 실행 결과 v1 (자동 검증 라운드)
+실행 근거:
+- E2E 명령: `run-e2e-sync-regression.ps1 -RegressionMaxAttempts 3 -RetryDelaySec 10`
+- E2E summary: `Logs/reconnect-regression-summary-20260307-193420.json`
+- 운영 품질: `OPEN_ISSUES=0`, `OPEN_P1=0`
+- Guardrails run: `completed/success`
+  - https://github.com/gargang2a/interStella/actions/runs/22797341792
+
+Gate 판정:
+1. 세션/재접속 안정성: PASS
+- queue/release/reassign 모두 true 확인
+
+2. 권한 경계 일관성: PENDING(수동 검증 필요)
+- Owner 입력/Remote 관찰 체감 검증은 사용자 플레이 라운드에서 판정
+
+3. 핵심 루프 성립: PENDING(수동 검증 필요)
+- 수집/운반/수리 1회 완주 체감 검증 필요
+
+4. 조작/가시성: PENDING(수동 검증 필요)
+- 1/2/3 시점 전환, 이동감/멀미/가시성은 수동 라운드에서 판정
+
+5. 운영/품질: PASS
+- open P1 이슈 0건
+- PR Guardrails Review 정상 동작
+
+현재 Go/No-Go:
+- NO-GO (수동 검증 미완료)
+- Steam 통합 착수 전, Gate 2/3/4를 동일 세션에서 PASS로 채워야 함
