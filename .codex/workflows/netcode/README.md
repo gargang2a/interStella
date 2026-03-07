@@ -30,6 +30,20 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync
 
 The wrapper fails fast if host is not listening on UDP `7770`.
 
+Interaction regression (owner boundary + delivery loop):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1
+
+# Increase post-interaction wait when scene/network is slower
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1 -PostInteractWaitSec 40 -AutoInteractCount 2
+```
+
+Validation targets:
+- owner interaction request accepted with caller/owner parity
+- at least one committed interaction
+- at least one repair delivery accepted log
+
 Prerequisites:
 - Host Unity editor for `C:\Unity\interStella` is running and already in Play mode.
 - `C:\Unity\interStellaClient` exists.

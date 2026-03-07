@@ -660,3 +660,19 @@
   - Gate 4: 1/2/3 시점 전환 + 조작감/가시성
 - [ ] 최종 Go/No-Go 갱신
   - Gate 2/3/4 PASS 시 Steam 통합 착수
+
+### 2026-03-07 20:03 (KST) 진행 스냅샷
+- [x] Gate 2/3 자동 증거 수집 스크립트 추가
+  - `.codex/workflows/netcode/run-interaction-regression.ps1`
+  - `.codex/workflows/netcode/README.md` 사용법 반영
+- [x] 상호작용 회귀 재검증 PASS
+  - summary: `Logs/interaction-regression-summary-20260307-200114.json`
+  - assignedClientDetected=true
+  - ownerBoundaryPass=true
+  - acceptedCommittedCount=2
+  - deliveryAcceptedCount=1
+- [x] Steam Gate 판정 갱신
+  - Gate 2 PASS(로그 기반)
+  - Gate 3 PASS(최소 1회 납품)
+- [ ] 잔여
+  - Gate 4(1/2/3 시점 전환 + 조작감/가시성) 수동 체감 검증
