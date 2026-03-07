@@ -869,3 +869,36 @@ Gate 판정:
 
 검증 로그 기준:
 - `[FishNetSessionService] Starting session provider=Direct, mode=Host, address=127.0.0.1, port=7770.`
+
+### 2026-03-07 21:26 (KST)
+## SteamSessionService 어댑터 가이드 (1차)
+대상 파일:
+- `Assets/Game/Netcode/Runtime/SteamSessionService.cs`
+
+목적:
+- `ISessionService` 경계를 유지한 채 Steam 로비/초대 상태를 분리
+- 아직 Steam SDK wiring 전 단계에서 세션 진입 조건을 명시적으로 검증
+
+상태 전이:
+- `Idle -> InvitePending -> LobbyReady -> SessionActive -> Failed`
+
+사용 메서드:
+- `QueueInvite(lobbyId, hostSteamId)`
+- `TryJoinLobby(lobbyId, hostSteamId)`
+- `TryCreateHostLobby()`
+- `StartSession()` / `StopSession()`
+
+런타임 오버라이드(어댑터):
+- invite lobby id:
+  - CLI: `-interstella-invite-lobby-id <lobbyId>`
+  - ENV: `INTERSTELLA_INVITE_LOBBY_ID=<lobbyId>`
+- invite host id:
+  - CLI: `-interstella-invite-host-id <steamId>`
+  - ENV: `INTERSTELLA_INVITE_HOST_ID=<steamId>`
+- self steam id:
+  - CLI: `-interstella-steam-self-id <steamId>`
+  - ENV: `INTERSTELLA_STEAM_SELF_ID=<steamId>`
+
+현재 제한(명시적):
+- Steam API 호출/로비 생성/초대 수락은 아직 실제 SDK 연동 전
+- 현재는 synthetic lobby id + FishNet bootstrap 주입으로 세션 경계만 검증

@@ -88,6 +88,9 @@ namespace InterStella.Game.Netcode.Runtime
         }
 
         public bool IsHost => _startupMode == StartupMode.Host || _startupMode == StartupMode.ServerOnly;
+        public string ActiveConnectionProvider => _connectionProvider.ToString();
+        public string ActiveSteamLobbyId => _steamLobbyId;
+        public string ActiveSteamHostId => _steamHostId;
 
         private void Awake()
         {
@@ -147,6 +150,21 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 _networkManager.ServerManager.StopConnection(true);
             }
+        }
+
+        public void UseDirectBootstrap()
+        {
+            _connectionProvider = ConnectionProvider.Direct;
+            _steamLobbyId = string.Empty;
+            _steamHostId = string.Empty;
+        }
+
+        public void UseSteamBootstrap(string lobbyId, string hostId, bool allowDirectFallback)
+        {
+            _connectionProvider = ConnectionProvider.SteamRelay;
+            _steamLobbyId = string.IsNullOrWhiteSpace(lobbyId) ? string.Empty : lobbyId.Trim();
+            _steamHostId = string.IsNullOrWhiteSpace(hostId) ? string.Empty : hostId.Trim();
+            _allowSteamFallbackToDirect = allowDirectFallback;
         }
 
 #if UNITY_EDITOR

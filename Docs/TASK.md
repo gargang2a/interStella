@@ -714,3 +714,27 @@
   - PlayMode 로그: `[FishNetSessionService] Starting session provider=Direct, mode=Host, address=127.0.0.1, port=7770.`
 - [ ] 다음 단계
   - Steam lobby/초대/릴레이 실제 어댑터(`ISessionService` 교체 가능 구조) 구현
+
+### 2026-03-07 21:26 (KST) 진행 스냅샷
+- [x] `ISessionService` 교체형 Steam 어댑터 1차 구현
+  - 신규 파일: `Assets/Game/Netcode/Runtime/SteamSessionService.cs`
+  - 상태머신: `Idle -> InvitePending -> LobbyReady -> SessionActive -> Failed`
+  - 핵심 메서드:
+    - `QueueInvite(lobbyId, hostSteamId)`
+    - `TryJoinLobby(lobbyId, hostSteamId)`
+    - `TryCreateHostLobby()`
+    - `StartSession()` / `StopSession()`
+- [x] FishNet 부트스트랩 주입 경계 공개
+  - `FishNetSessionService`에 공개 메서드 추가:
+    - `UseDirectBootstrap()`
+    - `UseSteamBootstrap(lobbyId, hostId, allowDirectFallback)`
+  - 읽기용 상태 노출:
+    - `ActiveConnectionProvider`, `ActiveSteamLobbyId`, `ActiveSteamHostId`
+- [x] 검증
+  - `validate_script`:
+    - `FishNetSessionService.cs` 통과
+    - `SteamSessionService.cs` 통과
+  - Unity refresh/compile 통과
+- [ ] 다음 단계
+  - `VerticalSlice_MVP`에서 `StationMatchController._sessionServiceBehaviour`를 `SteamSessionService`로 전환한 통합 스모크 1회
+  - Steam SDK/Transport 실제 wiring 시 `SteamRelay` 경로 실동작 검증
