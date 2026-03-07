@@ -666,3 +666,30 @@
 ### 2026-03-07 03:19 (KST)
 - 워크플로우 인덱스 문서:
   - `.codex/workflows/README.md`
+
+### 2026-03-07 03:36 (KST)
+- 신규 통합 워크플로우:
+  - `powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync-regression.ps1`
+- 옵션:
+  - 재시도: `-RegressionMaxAttempts 3 -RetryDelaySec 10`
+- 운영 메모:
+  - Host가 UDP 7770을 열지 않은 상태면 래퍼가 즉시 실패 처리
+
+### 2026-03-07 12:52 (KST)
+- Git 자동화 확장(신규):
+  1. PR 생성 스크립트
+     - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-pr.ps1 -Base main
+  2. 원샷 + PR
+     - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-workflow.ps1 -Task "e2e-check" -Base main -CommitMessage "chore: checkpoint" -Push -CreatePr -PrTitle "chore: e2e-check"
+- 동작 규칙:
+  - GITHUB_PAT_TOKEN이 있으면 REST API로 PR 생성
+  - 토큰이 없으면 실패하지 않고 PR_CREATE_URL을 출력(웹에서 즉시 생성 가능)
+- 검증 결과:
+  - 현재 환경은 토큰 미설정으로 URL fallback 경로 확인 완료
+
+### 2026-03-07 16:56 (KST)
+- 실행 결과 업데이트:
+  - 신규 워크플로우 커밋/푸시 완료 (84f961e)
+  - 현재 브랜치 기준 open PR 없음 확인
+- 즉시 생성 URL:
+  - https://github.com/gargang2a/interStella/compare/main...codex/e2e-workflow-orchestrator?expand=1

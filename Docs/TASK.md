@@ -556,3 +556,43 @@
 - [x] `.codex/workflows` 루트 인덱스 문서 추가
   - `.codex/workflows/README.md`
   - Git/Client Sync/Netcode Regression 스크립트 경로 통합 안내
+
+### 2026-03-07 03:36 (KST) 진행 스냅샷
+- [x] one-command E2E 래퍼 추가
+  - `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
+  - 기능: `client sync -> reconnect regression` 순차 실행
+- [x] 래퍼 안정성 보강
+  - Host preflight: UDP 7770 listening 체크 (미충족 시 즉시 실패)
+  - regression 재시도 옵션: `-RegressionMaxAttempts`, `-RetryDelaySec`
+- [x] 실제 실행 검증
+  - 명령: `run-e2e-sync-regression.ps1 -RegressionMaxAttempts 3 -RetryDelaySec 10`
+  - 결과: `E2E_SYNC_REGRESSION_PASS`
+  - summary: `Logs/reconnect-regression-summary-20260307-033146.json`
+  - releasedClientId=1, reassignedClientId=2
+
+### 2026-03-07 12:52 (KST) 진행 스냅샷
+- [x] Git 자동화에 PR 생성 단계 추가
+  - 신규: .codex/workflows/git/auto-pr.ps1
+  - 기능: GITHUB_PAT_TOKEN 존재 시 GitHub REST API로 PR 생성, 미존재 시 Compare URL 출력
+- [x] one-shot 워크플로우에 PR 연동 옵션 추가
+  - 수정: .codex/workflows/git/auto-workflow.ps1
+  - 신규 옵션: -CreatePr, -PrBase, -PrTitle, -PrBody, -PrDraft
+- [x] 워크플로우 문서 갱신
+  - .codex/workflows/git/README.md
+  - .codex/workflows/README.md
+- [x] 실행 검증
+  - 명령: powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-pr.ps1 -Base main
+  - 결과: TOKEN_MISSING_GITHUB_PAT_TOKEN + PR_CREATE_URL=.../compare/main...codex/e2e-workflow-orchestrator?expand=1
+- [ ] 후속
+  - 사용자 환경변수 GITHUB_PAT_TOKEN 설정 후 API 기반 PR 자동 생성까지 실검증
+
+### 2026-03-07 16:56 (KST) 진행 스냅샷
+- [x] 브랜치 반영
+  - branch: codex/e2e-workflow-orchestrator
+  - commit: 84f961e (feat: add auto-pr workflow and fallback compare URL)
+  - push: origin 반영 완료
+- [x] PR 존재 여부 확인
+  - GitHub API 조회 결과: OPEN_PR_NONE
+- [ ] PR 생성
+  - 토큰 미설정(GITHUB_PAT_TOKEN)으로 자동 생성 대신 URL fallback 사용
+  - 생성 URL: https://github.com/gargang2a/interStella/compare/main...codex/e2e-workflow-orchestrator?expand=1
