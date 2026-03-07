@@ -614,3 +614,12 @@
 - [ ] 다음 단계
   - Steam 로비/초대/릴레이 통합 전 체크리스트 고정
   - 2프로세스 수동 체감 검증 결과 캡처(시점 전환/이동/수리 완주)
+
+### 2026-03-07 18:56 (KST) 진행 스냅샷
+- [x] 무료 플랜 대체 PR 리뷰 봇 워크플로우 추가
+  - 파일: `.github/workflows/pr-guardrails-review.yml`
+  - 트리거: pull_request(opened/reopened/synchronize/ready_for_review)
+- [x] 자동 코멘트 방식
+  - PR 변경 패치 휴리스틱 점검 후 marker 기반 upsert 코멘트 생성/갱신
+- [ ] 후속
+  - 워크플로우 머지 후 PR #8 또는 신규 PR에서 Actions 실행/코멘트 생성 실검증

@@ -1,0 +1,173 @@
+name: PR Guardrails Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  guardrails-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Analyze changed files and upsert review comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = "<!-- interstella-pr-guardrails -->";
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pullNumber = context.payload.pull_request.number;
+
+            const files = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner, repo, pull_number: pullNumber, per_page: 100 }
+            );
+
+            const findings = [];
+            const totalFiles = files.length;
+            let hasCodeFile = false;
+
+            function addFinding(priority, title, detail, filename) {
+              findings.push({ priority, title, detail, filename });
+            }
+
+            for (const file of files) {
+              const filename = file.filename;
+              const patch = file.patch || "";
+              const lower = filename.toLowerCase();
+              const isCode = lower.endsWith(".cs");
+
+              if (isCode) {
+                hasCodeFile = true;
+              }
+
+              if (/Assets\/Game\/Features\/Player\/.*PlayerController.*\.cs/.test(filename)) {
+                addFinding(
+                  "P1",
+                  "PlayerController 비대화 리스크",
+                  "Player 기능 분리 원칙 위반 가능성. 입력/이동/연료/상호작용/네트워크가 단일 클래스에 결합되지 않았는지 확인 필요.",
+                  filename
+                );
+              }
+
+              if (!isCode || patch.length === 0) {
+                continue;
+              }
+
+              const hasUpdate = /Update\s*\(/.test(patch);
+              const hasFixedUpdate = /FixedUpdate\s*\(/.test(patch);
+
+              if (hasUpdate && /GetComponent\s*</.test(patch)) {
+                addFinding(
+                  "P1",
+                  "Update에서 GetComponent 사용",
+                  "핫패스에서 반복 조회는 성능 리스크. 캐시로 대체 필요.",
+                  filename
+                );
+              }
+
+              if (hasUpdate && /(FindObjectOfType|GameObject\.Find)\s*\(/.test(patch)) {
+                addFinding(
+                  "P1",
+                  "Update에서 Find 계열 API 사용",
+                  "핫패스 탐색 호출은 프레임 드랍 리스크. 초기화 시 캐시 권장.",
+                  filename
+                );
+              }
+
+              if ((hasUpdate || hasFixedUpdate) && /\.(Where|Select|First|Any|ToList)\s*\(/.test(patch)) {
+                addFinding(
+                  "P2",
+                  "핫패스 LINQ 사용 가능성",
+                  "Update/FixedUpdate 경로 LINQ는 GC/CPU 리스크. 루프 기반으로 치환 검토 필요.",
+                  filename
+                );
+              }
+
+              if ((hasUpdate || hasFixedUpdate) && /^\+.*Debug\.Log/m.test(patch)) {
+                addFinding(
+                  "P2",
+                  "핫패스 Debug.Log 추가",
+                  "핫루프 로그는 성능/노이즈 리스크. 조건부 로그로 제한 필요.",
+                  filename
+                );
+              }
+
+              if (/NetworkTransform/.test(patch) && filename.startsWith("Assets/Game/")) {
+                addFinding(
+                  "P2",
+                  "NetworkTransform 의존 경고",
+                  "게임플레이 권한/의미 동기화를 Transform 동기화로 대체하지 않았는지 검토 필요.",
+                  filename
+                );
+              }
+            }
+
+            const sorted = findings.sort((a, b) => a.priority.localeCompare(b.priority));
+            const changedList = files
+              .slice(0, 20)
+              .map((f) => `- \`${f.filename}\` (+${f.additions}/-${f.deletions})`)
+              .join("\n");
+
+            const lines = [];
+            lines.push(marker);
+            lines.push("## PR Guardrails 자동 리뷰");
+            lines.push(`- 대상 PR: #${pullNumber}`);
+            lines.push(`- 변경 파일 수: ${totalFiles}`);
+            lines.push(`- 코드 파일 포함: ${hasCodeFile ? "예" : "아니오"}`);
+            lines.push(`- 점검 시각(UTC): ${new Date().toISOString()}`);
+            lines.push("");
+
+            if (sorted.length === 0) {
+              lines.push("### 결과");
+              lines.push("감지된 위험 패턴 없음(휴리스틱 기준).");
+            } else {
+              lines.push(`### 감지 항목 (${sorted.length})`);
+              for (const item of sorted) {
+                lines.push(`- [${item.priority}] **${item.title}** \`${item.filename}\``);
+                lines.push(`  - ${item.detail}`);
+              }
+            }
+
+            if (changedList.length > 0) {
+              lines.push("");
+              lines.push("### 변경 파일 (최대 20개)");
+              lines.push(changedList);
+            }
+
+            lines.push("");
+            lines.push("---");
+            lines.push("본 코멘트는 휴리스틱 기반 자동 점검 결과입니다. 최종 판단은 코드 리뷰에서 확정하세요.");
+
+            const body = lines.join("\n");
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: pullNumber, per_page: 100 }
+            );
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info(`Updated existing guardrails comment: ${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pullNumber,
+                body
+              });
+              core.info("Created new guardrails comment.");
+            }

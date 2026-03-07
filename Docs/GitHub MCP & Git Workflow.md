@@ -100,3 +100,22 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\git\auto-workflow.ps
   4. auto-pull.ps1 재검증
 - 기대 결과:
   - 브랜치 생성/전환, 커밋/푸시, 추적 브랜치 pull 동작이 모두 자동화 스크립트로 완료
+
+## 9) Free 플랜 대체: PR Guardrails 자동 리뷰 코멘트
+- 파일:
+  - `.github/workflows/pr-guardrails-review.yml`
+- 목적:
+  - Copilot 자동 코드리뷰가 계정/플랜 제약으로 미동작할 때, PR마다 자동 리뷰 코멘트를 남기는 대체 경로 제공
+- 트리거:
+  - `pull_request` (`opened`, `reopened`, `synchronize`, `ready_for_review`)
+- 동작:
+  1. PR 변경 파일/패치를 수집
+  2. 휴리스틱 점검(핫패스 GetComponent/Find/LINQ/Debug.Log, NetworkTransform 의존 등)
+  3. PR 코멘트를 marker 기반으로 upsert(중복 누적 방지)
+- 권한:
+  - `contents: read`
+  - `pull-requests: write`
+- 확인 방법:
+  1. PR 생성/업데이트
+  2. Actions 탭에서 `PR Guardrails Review` 실행 확인
+  3. PR Conversation에서 `<!-- interstella-pr-guardrails -->` 코멘트 확인

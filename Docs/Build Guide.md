@@ -707,3 +707,14 @@
   - client IDs: released=2, reassigned=4
 - 운영 상태:
   - PR #6 머지 완료 후 main 기준선에서도 동일 회귀 경로가 정상 동작
+
+### 2026-03-07 18:56 (KST)
+- Copilot 자동리뷰 대체 경로 구축:
+  - GitHub Actions `PR Guardrails Review` 추가
+- 점검 룰(휴리스틱):
+  - Update/FixedUpdate에서 `GetComponent`, `FindObjectOfType`, `GameObject.Find`, LINQ, `Debug.Log`
+  - Gameplay 경로에서 `NetworkTransform` 의존
+- 결과 출력:
+  - PR 코멘트 1개를 marker 기준 upsert
+- 주의:
+  - `pull_request` 워크플로우는 base(main)에 머지된 이후부터 안정적으로 전 PR에서 동작
