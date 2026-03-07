@@ -1009,3 +1009,65 @@ PASS 기준(핵심):
   - `deliveryAcceptedCount=1`
   - `regressionSeedAppliedInHost=true`
   - `steamPass=true`
+
+### 2026-03-07 23:28 (KST)
+## Durable/Transient 회귀 확장 가이드 (Fuel/Repair/Tether)
+대상 파일:
+- `Assets/Game/Netcode/Runtime/PlayerFuelNetworkState.cs`
+- `Assets/Game/Netcode/Runtime/RepairObjectiveNetworkState.cs`
+- `Assets/Game/Netcode/Runtime/TetherNetworkStateReplicator.cs`
+- `Assets/Game/Netcode/Runtime/FishNetScenePlayerAssigner.cs`
+- `.codex/workflows/netcode/run-interaction-regression.ps1`
+
+목표:
+- strict 회귀에서 연결 성공 여부만이 아니라, `Fuel/Repair/Tether`의 durable/transient 증거를 함께 수집/판정
+
+핵심 보강:
+- Fuel:
+  - owner 변경 시 submit sequence 리셋(재접속/클라이언트 교체 시 stale reject 방지)
+  - host transient submit 수락/거부 마커 기록
+- Repair:
+  - host durable publish 마커 기록
+  - client transient delivery 이벤트 수신 마커 기록
+- Tether:
+  - host durable publish 마커 기록
+  - client durable apply 마커 기록
+  - slot assign 시점 서버 스냅샷 마커(`LogRegressionSnapshot`) 기록
+
+interaction regression summary 신규 핵심 필드:
+- `durableTransientPass`
+- `authorityMismatchAcceptedCount`
+- `fuelTransientAcceptedInHost`, `fuelRejectedCountInHost`
+- `repairDurablePublishedInHost`
+- `tetherDurablePublishedInHost`
+- `deliveryDuplicateDetectedInHost`, `deliveryMonotonicInHost`
+- `fuelDurableAppliedInClient`, `repairTransientEventCountInClient`, `tetherDurableAppliedInClient`
+
+실행 순서(권장):
+1. 클라이언트 동기화
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interstella-client.ps1
+```
+2. strict 회귀 실행
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-interaction-regression.ps1 -UseSteamBootstrap -StrictSteamRelay
+```
+
+최신 증적:
+- summary: `Logs/interaction-regression-summary-20260307-232755.json`
+- 결과:
+  - `passed=true`
+  - `durableTransientPass=true`
+  - `steamPass=true`
+  - `authorityMismatchAcceptedCount=0`
+  - `repairTransientDuplicateDetected=false`
+
+재검증(코드 경고 정리 후):
+- client sync: `CLIENT_SYNC_COMPLETED ... SYNCED=9`
+- summary: `Logs/interaction-regression-summary-20260307-233110.json`
+- 결과:
+  - `passed=true`
+  - `durableTransientPass=true`
+  - `fuelRejectedCountInHost=0`
+  - `repairTransientEventCountInClient=1`
+  - `tetherDurablePublishedInHost=true`

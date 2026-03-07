@@ -16,10 +16,14 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField]
         private bool _logTransientDeliveryEvents;
 
+        [SerializeField]
+        private bool _emitRegressionMarkers = true;
+
         private readonly SyncVar<int> _deliveredCountSync = new();
         private float _nextSyncTime;
         private int _lastPublishedDelivered = int.MinValue;
         private int _lastNotifiedDelivered = int.MinValue;
+        private bool _hasLoggedTransientMarker;
 
         private void Awake()
         {
@@ -96,6 +100,10 @@ namespace InterStella.Game.Netcode.Runtime
 
             _deliveredCountSync.Value = delivered;
             _lastPublishedDelivered = delivered;
+            if (_emitRegressionMarkers && delivered > 0)
+            {
+                Debug.Log($"[RepairObjectiveNetworkState] Durable repair sync published. delivered={delivered}/{required}, station={name}");
+            }
         }
 
         [ObserversRpc]
@@ -112,6 +120,12 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             _lastNotifiedDelivered = deliveredCount;
+            if (_emitRegressionMarkers && !_hasLoggedTransientMarker)
+            {
+                _hasLoggedTransientMarker = true;
+                Debug.Log($"[RepairObjectiveNetworkState] Transient delivery event received. delivered={deliveredCount}/{requiredCount}, station={name}");
+            }
+
             if (_logTransientDeliveryEvents)
             {
                 Debug.Log($"[RepairObjectiveNetworkState] Delivery event received. delivered={deliveredCount}/{requiredCount}, station={name}");
@@ -119,7 +133,7 @@ namespace InterStella.Game.Netcode.Runtime
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        private void OnValidate()
         {
             ResolveDependenciesIfMissing();
         }

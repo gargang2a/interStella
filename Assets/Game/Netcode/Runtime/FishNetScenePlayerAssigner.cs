@@ -475,6 +475,12 @@ namespace InterStella.Game.Netcode.Runtime
                 repairObjective.ResetObjective();
             }
 
+            TetherNetworkStateReplicator tetherReplicator = FindObjectOfType<TetherNetworkStateReplicator>();
+            if (tetherReplicator != null)
+            {
+                tetherReplicator.LogRegressionSnapshot();
+            }
+
             if (_logRegressionSeedEvents)
             {
                 Debug.Log($"[FishNetScenePlayerAssigner] Regression seed ready for slot {slotIndex}. player={bridge.name}, scrap={scrapObject.name}, station={stationObject.name}.");

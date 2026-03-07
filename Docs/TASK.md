@@ -820,3 +820,53 @@
 - [ ] 다음 단계
   - host측 binder auto-resolve 경로를 프리팹/씬 직렬화 의존 없이 고정하는 리팩터 1회
   - durable/transient 대상(`Fuel/Repair/Tether`) strict-path 회귀 자동화 항목 확장
+
+### 2026-03-07 23:28 (KST) 진행 스냅샷
+- [x] durable/transient strict-path 회귀 자동화 확장 (Fuel/Repair/Tether)
+  - `PlayerFuelNetworkState`
+    - owner 변경 시 submit sequence 리셋 보강(`_lastOwnerIdForSubmitSequence`)
+    - 회귀 마커 로그 추가: transient submit accepted/rejected, durable apply
+  - `RepairObjectiveNetworkState`
+    - 회귀 마커 로그 추가: durable repair sync published, transient delivery event received
+  - `TetherNetworkStateReplicator`
+    - 회귀 마커 로그 추가: durable sync published/applied, transient break received
+    - 서버 스냅샷 마커 API 추가: `LogRegressionSnapshot()`
+  - `FishNetScenePlayerAssigner`
+    - slot 할당/회귀 시드 시점에 tether 스냅샷 마커 호출
+- [x] 회귀 스크립트 판정 확장
+  - 파일: `.codex/workflows/netcode/run-interaction-regression.ps1`
+  - 신규 요약/판정 항목:
+    - `durableTransientPass`
+    - `authorityMismatchAcceptedCount`
+    - `fuelTransientAcceptedInHost`, `fuelRejectedCountInHost`
+    - `repairDurablePublishedInHost`
+    - `tetherDurablePublishedInHost`
+    - `deliveryDuplicateDetectedInHost`, `deliveryMonotonicInHost`
+    - client 관측: fuel/repair/tether durable/transient marker count
+- [x] Steam strict 재검증 PASS
+  - sync: `CLIENT_SYNC_COMPLETED MODE=INCREMENTAL ... SYNCED=9`
+  - 실행: `run-interaction-regression.ps1 -UseSteamBootstrap -StrictSteamRelay`
+  - 결과: `INTERACTION_REGRESSION_PASS ... ASSIGNED=1 COMMITTED=1 DELIVERIES=1`
+  - summary: `Logs/interaction-regression-summary-20260307-232755.json`
+    - `passed=true`
+    - `durableTransientPass=true`
+    - `steamPass=true`
+    - `authorityMismatchAcceptedCount=0`
+    - `repairTransientDuplicateDetected=false`
+- [x] 안정성 검증
+  - EditMode tests: `total=11, passed=11, failed=0`
+- [ ] 다음 단계
+  - `run-reconnect-regression`에도 동일 durable/transient 마커 판정 일부 이식
+  - Steam 실제 transport binder 구현체(Loopback 대체) 착수
+
+### 2026-03-07 23:32 (KST) 재검증 스냅샷
+- [x] 클라이언트 미러 동기화 후 strict 회귀 재확인
+  - `CLIENT_SYNC_COMPLETED ... SYNCED=9`
+  - `INTERACTION_REGRESSION_PASS ... ASSIGNED=1 COMMITTED=1 DELIVERIES=1`
+  - summary: `Logs/interaction-regression-summary-20260307-233110.json`
+    - `durableTransientPass=true`
+    - `fuelRejectedCountInHost=0`
+    - `repairTransientEventCountInClient=1`
+    - `tetherDurablePublishedInHost=true`
+- [x] EditMode 회귀 테스트 재확인
+  - `total=11, passed=11, failed=0`

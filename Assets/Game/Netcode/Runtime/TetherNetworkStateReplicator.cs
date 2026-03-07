@@ -17,6 +17,9 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField, Min(0f)]
         private float _distanceDeltaThreshold = 0.02f;
 
+        [SerializeField]
+        private bool _emitRegressionMarkers = true;
+
         private readonly SyncVar<float> _distanceSync = new();
         private readonly SyncVar<byte> _tensionLevelSync = new();
         private readonly SyncVar<bool> _isBrokenSync = new();
@@ -31,6 +34,8 @@ namespace InterStella.Game.Netcode.Runtime
         private bool _lastAppliedBroken;
         private uint _lastReceivedBreakSequence;
         private bool _hasReceivedBreakSequence;
+        private bool _hasLoggedClientApplyMarker;
+        private bool _hasLoggedTransientBreakMarker;
 
         private void Awake()
         {
@@ -93,6 +98,11 @@ namespace InterStella.Game.Netcode.Runtime
             _hasReceivedBreakSequence = true;
             _tetherLink.MarkBroken(currentDistance);
             CacheAppliedState(currentDistance, (byte)TetherTensionLevel.Broken, true);
+            if (_emitRegressionMarkers && !_hasLoggedTransientBreakMarker)
+            {
+                _hasLoggedTransientBreakMarker = true;
+                Debug.Log($"[TetherNetworkStateReplicator] Transient tether break received. distance={currentDistance:F3}, sequence={breakSequence}, object={name}");
+            }
         }
 
         private void HandleDistanceChanged(float previous, float next, bool asServer)
@@ -146,11 +156,13 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 _tetherLink.MarkBroken(distance);
                 CacheAppliedState(distance, levelByte, true);
+                TryLogClientApplyMarker(distance, level, true);
                 return;
             }
 
             _tetherLink.SetRuntimeState(distance, level);
             CacheAppliedState(distance, levelByte, false);
+            TryLogClientApplyMarker(distance, level, false);
         }
 
         private void PublishServerState(bool force)
@@ -187,6 +199,10 @@ namespace InterStella.Game.Netcode.Runtime
             _lastDistance = distance;
             _lastTensionLevel = level;
             _lastBroken = broken;
+            if (_emitRegressionMarkers && !force)
+            {
+                Debug.Log($"[TetherNetworkStateReplicator] Durable tether sync published. distance={distance:F3}, level={(TetherTensionLevel)level}, broken={broken}, object={name}");
+            }
         }
 
         private bool HasAlreadyApplied(float distance, byte tensionLevel, bool broken)
@@ -206,8 +222,30 @@ namespace InterStella.Game.Netcode.Runtime
             _lastAppliedBroken = broken;
         }
 
+        private void TryLogClientApplyMarker(float distance, TetherTensionLevel level, bool isBroken)
+        {
+            if (!_emitRegressionMarkers || _hasLoggedClientApplyMarker || IsServerStarted)
+            {
+                return;
+            }
+
+            _hasLoggedClientApplyMarker = true;
+            Debug.Log($"[TetherNetworkStateReplicator] Durable tether sync applied. distance={distance:F3}, level={level}, broken={isBroken}, object={name}");
+        }
+
+        public void LogRegressionSnapshot()
+        {
+            if (!_emitRegressionMarkers || !IsServerStarted || _tetherLink == null)
+            {
+                return;
+            }
+
+            TetherState state = _tetherLink.BuildState();
+            Debug.Log($"[TetherNetworkStateReplicator] Durable tether snapshot. distance={state.CurrentDistance:F3}, level={state.TensionLevel}, broken={state.IsBroken}, object={name}");
+        }
+
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        private void OnValidate()
         {
             ResolveDependenciesIfMissing();
         }

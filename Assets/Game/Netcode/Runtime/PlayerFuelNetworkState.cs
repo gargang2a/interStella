@@ -26,6 +26,9 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField, Min(0f)]
         private float _serverDeltaTolerance = 0.05f;
 
+        [SerializeField]
+        private bool _emitRegressionMarkers = true;
+
         private readonly SyncVar<float> _currentFuelSync = new();
         private float _lastSubmittedFuel = float.MinValue;
         private float _nextSendTime;
@@ -33,6 +36,7 @@ namespace InterStella.Game.Netcode.Runtime
         private float _lastAcceptedFuelTime = -1f;
         private ushort _nextSubmitSequence;
         private int _lastAcceptedSubmitSequence = -1;
+        private int _lastOwnerIdForSubmitSequence = int.MinValue;
 
         private void Awake()
         {
@@ -55,6 +59,7 @@ namespace InterStella.Game.Netcode.Runtime
         {
             PublishFromLocalFuel();
             _lastAcceptedSubmitSequence = -1;
+            _lastOwnerIdForSubmitSequence = int.MinValue;
         }
 
         private void FixedUpdate()
@@ -102,23 +107,33 @@ namespace InterStella.Game.Netcode.Runtime
             int expectedOwnerId = ResolveExpectedOwnerId();
             if (expectedOwnerId < 0 || caller == null || caller.ClientId != expectedOwnerId)
             {
+                TryLogRejectedSubmit("owner-mismatch", caller, expectedOwnerId, currentFuel, submitSequence);
                 return;
+            }
+
+            if (_lastOwnerIdForSubmitSequence != expectedOwnerId)
+            {
+                _lastOwnerIdForSubmitSequence = expectedOwnerId;
+                _lastAcceptedSubmitSequence = -1;
             }
 
             if (!IsNewSubmitSequence(submitSequence))
             {
+                TryLogRejectedSubmit("stale-sequence", caller, expectedOwnerId, currentFuel, submitSequence);
                 return;
             }
 
             float clampedFuel = ClampFuel(currentFuel);
             if (!CanAcceptSubmittedFuel(clampedFuel))
             {
+                TryLogRejectedSubmit("delta-exceeded", caller, expectedOwnerId, clampedFuel, submitSequence);
                 return;
             }
 
             _currentFuelSync.Value = clampedFuel;
             UpdateLastAcceptedFuel(clampedFuel);
             _lastAcceptedSubmitSequence = submitSequence;
+            TryLogAcceptedSubmit(caller, expectedOwnerId, clampedFuel, submitSequence);
         }
 
         private void HandleCurrentFuelChanged(float previous, float next, bool asServer)
@@ -134,6 +149,10 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             _playerFuel.SetCurrentFuelAuthoritative(next);
+            if (_emitRegressionMarkers)
+            {
+                Debug.Log($"[PlayerFuelNetworkState] Durable fuel sync applied. previous={previous:F3}, next={next:F3}, object={name}");
+            }
         }
 
         private void PublishFromLocalFuel()
@@ -204,6 +223,28 @@ namespace InterStella.Game.Netcode.Runtime
             _lastAcceptedFuelTime = Time.unscaledTime;
         }
 
+        private void TryLogAcceptedSubmit(NetworkConnection caller, int expectedOwnerId, float acceptedFuel, ushort submitSequence)
+        {
+            if (!_emitRegressionMarkers)
+            {
+                return;
+            }
+
+            int callerId = caller == null ? -1 : caller.ClientId;
+            Debug.Log($"[PlayerFuelNetworkState] Transient fuel submit accepted. caller={callerId}, owner={expectedOwnerId}, fuel={acceptedFuel:F3}, seq={submitSequence}, object={name}");
+        }
+
+        private void TryLogRejectedSubmit(string reason, NetworkConnection caller, int expectedOwnerId, float submittedFuel, ushort submitSequence)
+        {
+            if (!_emitRegressionMarkers)
+            {
+                return;
+            }
+
+            int callerId = caller == null ? -1 : caller.ClientId;
+            Debug.LogWarning($"[PlayerFuelNetworkState] Fuel submit rejected. reason={reason}, caller={callerId}, owner={expectedOwnerId}, fuel={submittedFuel:F3}, seq={submitSequence}, object={name}");
+        }
+
         private bool IsNewSubmitSequence(ushort submitSequence)
         {
             if (_lastAcceptedSubmitSequence < 0)
@@ -226,7 +267,7 @@ namespace InterStella.Game.Netcode.Runtime
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        private void OnValidate()
         {
             ResolveDependenciesIfMissing();
         }

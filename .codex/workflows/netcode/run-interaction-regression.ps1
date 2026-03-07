@@ -282,13 +282,71 @@ try {
     $clientLogText = if (Test-Path $clientLog -PathType Leaf) { Get-Content $clientLog -Raw } else { "" }
 
     $assignedMatch = [Regex]::Match($hostDeltaText, "Assigned client (\d+) to slot 1 \(PlayerB\)\.")
-    $acceptedAnyMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\..*committed=(True|False)")
+    $acceptedAnyMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\. caller=(\-?\d+), owner=(\-?\d+), committed=(True|False), object=([^\r\n]+)")
     $acceptedCommittedMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\..*committed=True")
     $acceptedUncommittedMatches = [Regex]::Matches($hostDeltaText, "\[PlayerInteractionNetworkRelay\] Accepted interaction request\..*committed=False")
     $deliveryMatches = [Regex]::Matches($hostDeltaText, "\[RepairStationObjective\] Delivery accepted\. delivered=(\d+)/(\d+)")
     $regressionSeedAppliedInHost = $hostDeltaText -match "\[FishNetScenePlayerAssigner\] Regression seed ready for slot \d+\."
+    $fuelTransientAcceptedInHost = $hostDeltaText -match "\[PlayerFuelNetworkState\] Transient fuel submit accepted\."
+    $fuelDurableAppliedInHost = $hostDeltaText -match "\[PlayerFuelNetworkState\] Durable fuel sync applied\."
+    $fuelRejectedMatches = [Regex]::Matches($hostDeltaText, "\[PlayerFuelNetworkState\] Fuel submit rejected\.")
+    $repairDurablePublishedInHost = $hostDeltaText -match "\[RepairObjectiveNetworkState\] Durable repair sync published\."
+    $tetherDurablePublishedInHost = $hostDeltaText -match "\[TetherNetworkStateReplicator\] Durable tether (sync published|snapshot)\."
     $ownerBoundaryPass = Parse-OwnerBoundaryPass -HostLogDelta $hostDeltaText
     $autoInteractReachedTarget = $clientLogText -match "successes=\d+/$([Math]::Max(1, $AutoInteractCount))"
+    $fuelDurableAppliedInClient = $clientLogText -match "\[PlayerFuelNetworkState\] Durable fuel sync applied\."
+    $repairTransientMatches = [Regex]::Matches($clientLogText, "\[RepairObjectiveNetworkState\] Transient delivery event received\. delivered=(\d+)/(\d+)")
+    $repairTransientEventCountInClient = $repairTransientMatches.Count
+    $repairTransientDuplicateDetected = $false
+    $repairTransientMonotonic = $true
+    $repairLastDeliveredCount = -1
+    $repairDeliveredSet = @{}
+    foreach ($repairTransientMatch in $repairTransientMatches) {
+        $deliveredCount = [int]$repairTransientMatch.Groups[1].Value
+        if ($repairDeliveredSet.ContainsKey($deliveredCount)) {
+            $repairTransientDuplicateDetected = $true
+        }
+        else {
+            $repairDeliveredSet[$deliveredCount] = $true
+        }
+
+        if ($repairLastDeliveredCount -gt $deliveredCount) {
+            $repairTransientMonotonic = $false
+        }
+
+        $repairLastDeliveredCount = $deliveredCount
+    }
+
+    $tetherDurableAppliedInClient = $clientLogText -match "\[TetherNetworkStateReplicator\] Durable tether sync applied\."
+    $tetherTransientBreakCountInClient = ([Regex]::Matches($clientLogText, "\[TetherNetworkStateReplicator\] Transient tether break received\.")).Count
+
+    $deliveryDuplicateDetectedInHost = $false
+    $deliveryMonotonicInHost = $true
+    $lastDeliveredInHost = -1
+    $deliverySetInHost = @{}
+    foreach ($deliveryMatch in $deliveryMatches) {
+        $deliveredInHost = [int]$deliveryMatch.Groups[1].Value
+        if ($deliverySetInHost.ContainsKey($deliveredInHost)) {
+            $deliveryDuplicateDetectedInHost = $true
+        }
+        else {
+            $deliverySetInHost[$deliveredInHost] = $true
+        }
+
+        if ($lastDeliveredInHost -gt $deliveredInHost) {
+            $deliveryMonotonicInHost = $false
+        }
+
+        $lastDeliveredInHost = $deliveredInHost
+    }
+
+    $authorityMismatchAcceptedCount = 0
+    foreach ($acceptedAnyMatch in $acceptedAnyMatches) {
+        if ($acceptedAnyMatch.Groups[1].Value -ne $acceptedAnyMatch.Groups[2].Value) {
+            $authorityMismatchAcceptedCount++
+        }
+    }
+
     $steamBootstrapAppliedInClient = $clientLogText -match "\[SteamSessionService\] Applied Steam bootstrap to FishNet\..*binder=True"
     $steamBinderAppliedInClient = $clientLogText -match "\[FishNetSessionService\] Steam relay transport binder applied\."
     $steamFallbackInClient = $clientLogText -match "Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled\."
@@ -301,7 +359,22 @@ try {
         }
     }
 
-    $passed = ($assignedMatch.Success -and $ownerBoundaryPass -and $acceptedCommittedMatches.Count -ge 1 -and $deliveryMatches.Count -ge 1 -and $steamPass)
+    $durableTransientPass = $fuelTransientAcceptedInHost `
+        -and ($fuelRejectedMatches.Count -eq 0) `
+        -and ($fuelDurableAppliedInClient -or $fuelDurableAppliedInHost) `
+        -and $repairDurablePublishedInHost `
+        -and ($deliveryMatches.Count -ge 1) `
+        -and (-not $deliveryDuplicateDetectedInHost) `
+        -and $deliveryMonotonicInHost `
+        -and $tetherDurablePublishedInHost
+
+    $passed = ($assignedMatch.Success `
+        -and $ownerBoundaryPass `
+        -and ($authorityMismatchAcceptedCount -eq 0) `
+        -and $durableTransientPass `
+        -and $acceptedCommittedMatches.Count -ge 1 `
+        -and $deliveryMatches.Count -ge 1 `
+        -and $steamPass)
     $assignedClientId = if ($assignedMatch.Success) { $assignedMatch.Groups[1].Value } else { "" }
 
     $summary = [ordered]@{
@@ -310,6 +383,21 @@ try {
         assignedClientDetected = $assignedMatch.Success
         assignedClientId = $assignedClientId
         ownerBoundaryPass = $ownerBoundaryPass
+        authorityMismatchAcceptedCount = $authorityMismatchAcceptedCount
+        durableTransientPass = $durableTransientPass
+        fuelTransientAcceptedInHost = $fuelTransientAcceptedInHost
+        fuelDurableAppliedInHost = $fuelDurableAppliedInHost
+        fuelRejectedCountInHost = $fuelRejectedMatches.Count
+        fuelDurableAppliedInClient = $fuelDurableAppliedInClient
+        repairDurablePublishedInHost = $repairDurablePublishedInHost
+        deliveryDuplicateDetectedInHost = $deliveryDuplicateDetectedInHost
+        deliveryMonotonicInHost = $deliveryMonotonicInHost
+        tetherDurablePublishedInHost = $tetherDurablePublishedInHost
+        repairTransientEventCountInClient = $repairTransientEventCountInClient
+        repairTransientDuplicateDetected = $repairTransientDuplicateDetected
+        repairTransientMonotonic = $repairTransientMonotonic
+        tetherDurableAppliedInClient = $tetherDurableAppliedInClient
+        tetherTransientBreakCountInClient = $tetherTransientBreakCountInClient
         acceptedAnyCount = $acceptedAnyMatches.Count
         acceptedCommittedCount = $acceptedCommittedMatches.Count
         acceptedUncommittedCount = $acceptedUncommittedMatches.Count

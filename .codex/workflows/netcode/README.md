@@ -59,11 +59,17 @@ Validation targets:
 - when `-UseSteamBootstrap`:
   - client log contains Steam bootstrap + binder applied logs
   - strict mode (`-StrictSteamRelay`) has no direct fallback log
+- durable vs transient markers:
+  - host: fuel transient accept, repair durable publish, tether durable publish/snapshot
+  - client: fuel durable apply, repair transient delivery event, tether durable apply
+  - no host-side delivery duplicate/reorder
 
 Prerequisites:
 - Host Unity editor for `C:\Unity\interStella` is running and already in Play mode.
 - `C:\Unity\interStellaClient` exists.
 - Unity editor path in script matches installed version.
+- Run client sync before strict regression after code changes:
+  - `powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interstella-client.ps1`
 
 Camera mode smoke (Gate4) uses Unity debug menu actions (no separate PowerShell runner yet):
 1. `Tools/InterStella/Debug/Camera/Set First Person`
