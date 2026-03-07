@@ -241,7 +241,7 @@ namespace InterStella.Game.Netcode.Runtime
             if (_networkSessionBehaviour is FishNetSessionService fishNetSession)
             {
                 fishNetSession.UseSteamBootstrap(_activeLobbyId, _activeHostSteamId, _allowDirectFallbackIfRelayUnavailable);
-                Debug.Log($"[SteamSessionService] Applied Steam bootstrap to FishNet. provider={fishNetSession.ActiveConnectionProvider}, lobbyId={fishNetSession.ActiveSteamLobbyId}.");
+                Debug.Log($"[SteamSessionService] Applied Steam bootstrap to FishNet. provider={fishNetSession.ActiveConnectionProvider}, lobbyId={fishNetSession.ActiveSteamLobbyId}, binder={fishNetSession.HasSteamRelayTransportBinder}.");
                 return;
             }
 

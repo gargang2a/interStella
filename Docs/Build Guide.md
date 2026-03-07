@@ -942,3 +942,28 @@ Gate 판정:
 최신 결과:
 - 통합 로그 체인 PASS
 - EditMode summary: `total=9, passed=9, failed=0`
+
+### 2026-03-07 22:19 (KST)
+## Steam Relay Binder 가이드 (준-실연동 단계)
+신규 파일:
+- `Assets/Game/Netcode/Runtime/ISteamRelayTransportBinder.cs`
+- `Assets/Game/Netcode/Runtime/SteamRelayLoopbackTransportBinder.cs`
+
+목적:
+- `FishNetSessionService`에서 SteamRelay 선택 시 transport wiring 책임을 binder로 위임
+- binder 부재/실패 처리와 fallback 정책을 분리
+
+현재 구현 동작:
+- Host mode:
+  - binder가 relay bootstrap을 수락하고 세션 시작 진행
+- Client mode:
+  - `hostId`가 `address:port` 포맷이면 endpoint로 사용
+  - 아니면 binder fallback endpoint(`_fallbackAddress/_fallbackPort`) 사용
+
+통합 로그 기준 PASS:
+- `[SteamSessionService] Applied Steam bootstrap to FishNet ... binder=True`
+- `[FishNetSessionService] Steam relay transport binder applied ...`
+
+회귀 테스트:
+- 신규 테스트: `SteamRelayLoopbackTransportBinderTests` 2건
+- EditMode 최신 summary: `total=11, passed=11, failed=0`

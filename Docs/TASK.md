@@ -770,3 +770,25 @@
   - EditMode: total=9, passed=9, failed=0
 - [ ] 다음 단계
   - Steam SDK/Relay transport 실제 wiring 연결 후 fallback 비활성(`_allowSteamFallbackToDirect=false`) 경로 실검증
+
+### 2026-03-07 22:19 (KST) 진행 스냅샷
+- [x] Steam relay transport binder 경계 추가
+  - 신규 인터페이스: `Assets/Game/Netcode/Runtime/ISteamRelayTransportBinder.cs`
+  - 신규 구현: `Assets/Game/Netcode/Runtime/SteamRelayLoopbackTransportBinder.cs`
+    - Host mode: relay bootstrap 수락
+    - Client mode: `hostId`의 `address:port` 파싱 또는 fallback endpoint 사용
+- [x] FishNet relay wiring 경로 보강
+  - 파일: `Assets/Game/Netcode/Runtime/FishNetSessionService.cs`
+  - 변경: SteamRelay 선택 시 binder `TryApplyBootstrap(...)` 호출
+  - binder 없음/실패 시 fallback 정책(`_allowSteamFallbackToDirect`)에 따라 차단 또는 direct 전환
+- [x] 씬 통합 보강
+  - `VerticalSlice_MVP`의 `MatchSystems`에 `SteamRelayLoopbackTransportBinder` 추가
+- [x] 통합 스모크 PASS
+  - `[SteamSessionService] Applied Steam bootstrap to FishNet ... binder=True`
+  - `[FishNetSessionService] Steam relay transport binder applied ...`
+- [x] 테스트 확장 및 통과
+  - 신규: `Assets/Game/Netcode/Editor/Tests/SteamRelayLoopbackTransportBinderTests.cs`
+  - EditMode summary: total=11, passed=11, failed=0
+- [ ] 다음 단계
+  - Steam SDK transport binder(실제 Steam API 호출 구현체) 추가
+  - fallback 비활성(strict relay)에서 Host/Client E2E 재검증

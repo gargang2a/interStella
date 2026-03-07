@@ -44,6 +44,9 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField]
         private bool _allowSteamFallbackToDirect = false;
 
+        [SerializeField]
+        private MonoBehaviour _steamRelayTransportBinderBehaviour;
+
         [Header("Runtime Override")]
         [SerializeField]
         private bool _allowRuntimeOverride = true;
@@ -91,10 +94,12 @@ namespace InterStella.Game.Netcode.Runtime
         public string ActiveConnectionProvider => _connectionProvider.ToString();
         public string ActiveSteamLobbyId => _steamLobbyId;
         public string ActiveSteamHostId => _steamHostId;
+        public bool HasSteamRelayTransportBinder => _steamRelayTransportBinderBehaviour is ISteamRelayTransportBinder;
 
         private void Awake()
         {
             ResolveNetworkManagerIfMissing();
+            ResolveSteamRelayTransportBinderIfMissing();
             ApplyRuntimeOverrides();
         }
 
@@ -109,14 +114,19 @@ namespace InterStella.Game.Netcode.Runtime
             ApplyRuntimeOverrides();
             if (_connectionProvider == ConnectionProvider.SteamRelay)
             {
-                Debug.LogWarning($"[FishNetSessionService] Steam relay bootstrap requested. lobbyId={_steamLobbyId}, hostId={_steamHostId}. Steam transport wiring is not implemented yet.");
-                if (!_allowSteamFallbackToDirect)
+                if (!TryApplySteamRelayBootstrap(out bool relayApplied, out string relayDetails))
                 {
-                    Debug.LogWarning("[FishNetSessionService] Session start blocked because SteamRelay is selected and direct fallback is disabled.");
                     return false;
                 }
 
-                Debug.LogWarning("[FishNetSessionService] Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled.");
+                if (relayApplied)
+                {
+                    Debug.Log($"[FishNetSessionService] Steam relay transport binder applied. {relayDetails}");
+                }
+                else if (!string.IsNullOrWhiteSpace(relayDetails))
+                {
+                    Debug.LogWarning("[FishNetSessionService] " + relayDetails);
+                }
             }
 
             Debug.Log($"[FishNetSessionService] Starting session provider={_connectionProvider}, mode={_startupMode}, address={_clientAddress}, port={_port}.");
@@ -171,6 +181,7 @@ namespace InterStella.Game.Netcode.Runtime
         private void OnValidate()
         {
             ResolveNetworkManagerIfMissing();
+            ResolveSteamRelayTransportBinderIfMissing();
         }
 #endif
 
@@ -306,6 +317,62 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 _networkManager = FindObjectOfType<NetworkManager>();
             }
+        }
+
+        private void ResolveSteamRelayTransportBinderIfMissing()
+        {
+            if (_steamRelayTransportBinderBehaviour == null)
+            {
+                _steamRelayTransportBinderBehaviour = GetComponent<SteamRelayLoopbackTransportBinder>();
+            }
+        }
+
+        private bool TryApplySteamRelayBootstrap(out bool relayApplied, out string details)
+        {
+            relayApplied = false;
+            details = string.Empty;
+
+            if (!(_steamRelayTransportBinderBehaviour is ISteamRelayTransportBinder transportBinder))
+            {
+                details = "Steam relay bootstrap requested but no ISteamRelayTransportBinder is configured.";
+                if (!_allowSteamFallbackToDirect)
+                {
+                    Debug.LogWarning("[FishNetSessionService] Session start blocked because SteamRelay is selected and direct fallback is disabled.");
+                    return false;
+                }
+
+                details += " Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled.";
+                return true;
+            }
+
+            bool binderApplied = transportBinder.TryApplyBootstrap(
+                _networkManager,
+                _startupMode == StartupMode.Host || _startupMode == StartupMode.ServerOnly,
+                _steamLobbyId,
+                _steamHostId,
+                ref _clientAddress,
+                ref _port,
+                out string binderDetails);
+
+            if (binderApplied)
+            {
+                relayApplied = true;
+                details = string.IsNullOrWhiteSpace(binderDetails)
+                    ? $"lobbyId={_steamLobbyId}, hostId={_steamHostId}, endpoint={_clientAddress}:{_port}."
+                    : binderDetails;
+                return true;
+            }
+
+            if (!_allowSteamFallbackToDirect)
+            {
+                details = "Session start blocked because Steam relay transport binder failed and direct fallback is disabled.";
+                return false;
+            }
+
+            details = string.IsNullOrWhiteSpace(binderDetails)
+                ? "Steam relay transport binder failed. Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled."
+                : $"Steam relay transport binder failed ({binderDetails}). Falling back to direct endpoint because _allowSteamFallbackToDirect is enabled.";
+            return true;
         }
     }
 }

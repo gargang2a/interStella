@@ -328,6 +328,7 @@ GameObject:
   - component: {fileID: 284635960}
   - component: {fileID: 284635963}
   - component: {fileID: 284635964}
+  - component: {fileID: 284635965}
   m_Layer: 0
   m_Name: MatchSystems
   m_TagString: Untagged
@@ -430,6 +431,7 @@ MonoBehaviour:
   _steamLobbyId: 
   _steamHostId: 
   _allowSteamFallbackToDirect: 0
+  _steamRelayTransportBinderBehaviour: {fileID: 0}
   _allowRuntimeOverride: 1
   _modeArgument: interstella-mode
   _addressArgument: interstella-address
@@ -503,6 +505,21 @@ MonoBehaviour:
   _inviteHostIdArgument: interstella-invite-host-id
   _selfSteamIdArgument: interstella-steam-self-id
   _lifecycleState: 0
+--- !u!114 &284635965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d11a4085c6a64d459ecf4c1fd892938, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _allowHostIdEndpointOverride: 1
+  _fallbackAddress: 127.0.0.1
+  _fallbackPort: 7770
 --- !u!1 &289819984
 GameObject:
   m_ObjectHideFlags: 0
