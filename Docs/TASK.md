@@ -738,3 +738,16 @@
 - [ ] 다음 단계
   - `VerticalSlice_MVP`에서 `StationMatchController._sessionServiceBehaviour`를 `SteamSessionService`로 전환한 통합 스모크 1회
   - Steam SDK/Transport 실제 wiring 시 `SteamRelay` 경로 실동작 검증
+
+### 2026-03-07 21:32 (KST) 진행 스냅샷
+- [x] Steam 어댑터 상태 전이 EditMode 테스트 추가
+  - 신규: `Assets/Game/Netcode/Editor/Tests/SteamSessionServiceTests.cs`
+  - 케이스:
+    - `StartSession_HostAutoCreateLobby_Succeeds`
+    - `StartSession_ClientWithoutInvite_Fails`
+    - `StartSession_ClientWithQueuedInvite_Succeeds`
+- [x] 테스트 실행 결과
+  - EditMode 전체: total=9, passed=9, failed=0
+  - 기존 `NetworkSequenceComparerTests` 6건 + 신규 `SteamSessionServiceTests` 3건 통과
+- [ ] 다음 단계
+  - Steam 어댑터 씬 통합(서비스 참조 전환) 전/후 회귀 스모크 비교 로그 누적

@@ -902,3 +902,22 @@ Gate 판정:
 현재 제한(명시적):
 - Steam API 호출/로비 생성/초대 수락은 아직 실제 SDK 연동 전
 - 현재는 synthetic lobby id + FishNet bootstrap 주입으로 세션 경계만 검증
+
+### 2026-03-07 21:32 (KST)
+## Steam 어댑터 테스트 가이드 (EditMode)
+대상 파일:
+- `Assets/Game/Netcode/Editor/Tests/SteamSessionServiceTests.cs`
+
+신규 테스트:
+1. `StartSession_HostAutoCreateLobby_Succeeds`
+2. `StartSession_ClientWithoutInvite_Fails`
+3. `StartSession_ClientWithQueuedInvite_Succeeds`
+
+실행:
+- Unity MCP `run_tests(mode=EditMode, include_details=true)`
+
+최신 결과:
+- summary: `total=9, passed=9, failed=0`
+- 구성:
+  - `NetworkSequenceComparerTests`: 6 passed
+  - `SteamSessionServiceTests`: 3 passed
