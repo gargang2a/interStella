@@ -637,3 +637,15 @@
   - PR #8 closed (probe 목적 완료, 비머지)
 - [ ] 후속
   - 필요 시 guardrails 휴리스틱 룰(권한/핫패스/테더 의미) 프로젝트 맞춤 확장
+
+### 2026-03-07 19:25 (KST) 진행 스냅샷
+- [x] Steam 통합 전 게이트 체크리스트 v1 고정 (SSOT)
+  - 기준 문서: `Docs/Build Guide.md`의 "Steam 통합 전 게이트 체크리스트 v1 (SSOT)"
+- [x] 범위/비지원 명시
+  - MVP 범위: 2인, Host-authoritative, VerticalSlice 1개 루프
+  - 비지원: late join, host migration
+- [ ] Go/No-Go 판정 실행
+  - 체크리스트 항목별 PASS/FAIL 실제 입력
+  - P1 이슈 0건 확인
+- [ ] 수동 체감 검증 캡처
+  - 1/2/3 시점 전환, 이동 체감, 수리 납품 루프

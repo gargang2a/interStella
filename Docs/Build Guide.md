@@ -728,3 +728,41 @@
   - PR Conversation에 marker 코멘트 upsert
 - 결론:
   - Free 플랜 환경에서도 PR 자동 리뷰 코멘트 경로 확보
+
+### 2026-03-07 19:25 (KST)
+## Steam 통합 전 게이트 체크리스트 v1 (SSOT)
+대상 범위:
+- 2인 코옵 MVP
+- Host-authoritative 세션
+- VerticalSlice_MVP 1개 루프(접속 -> 이동/테더/연료 -> 수리 -> 종료)
+
+비지원(명시적):
+- late join
+- host migration
+
+Gate 항목(모두 PASS 필요):
+1. 세션/재접속 안정성
+- `run-e2e-sync-regression.ps1` 기준 PASS
+- summary에서 `queueDetected/releaseDetected/reassignedAfterReleaseDetected=true`
+- reconnect 시 슬롯 release -> 재할당 로그 확인
+
+2. 권한 경계 일관성
+- Owner만 입력/상호작용 반영
+- Remote는 관찰만 가능(로컬 입력으로 이동 금지)
+- 권한 위반 요청이 authoritative commit으로 반영되지 않음
+
+3. 핵심 루프 성립
+- 스크랩 픽업/운반/수리 납품 최소 1회 성공
+- 연료/테더/수리 상태가 Host/Client에서 동일 의미로 보임
+
+4. 조작/가시성
+- 1/2/3 시점 전환 정상
+- 이동 감도/멀미/가시성 치명 이슈 없음
+
+5. 운영/품질
+- main 기준 open P1 이슈 0건
+- PR 자동 리뷰 경로(PR Guardrails Review) 정상 동작
+
+Go/No-Go 규칙:
+- 모든 Gate PASS + P1 0건이면 Steam 로비/초대/릴레이 통합 착수
+- 하나라도 FAIL이면 Steam 통합 보류, 실패 항목 먼저 수정
