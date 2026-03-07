@@ -693,3 +693,17 @@
   - 현재 브랜치 기준 open PR 없음 확인
 - 즉시 생성 URL:
   - https://github.com/gargang2a/interStella/compare/main...codex/e2e-workflow-orchestrator?expand=1
+
+### 2026-03-07 17:36 (KST)
+- 머지 후 회귀 검증 절차(실행 완료):
+  1. Unity MCP로 Host Editor Play 진입
+  2. UDP 7770 listening 확인
+  3. `run-e2e-sync-regression.ps1` 실행
+  4. PASS 및 summary 확인
+  5. Host Editor Play stop
+- 최신 PASS 산출물:
+  - `Logs/reconnect-regression-summary-20260307-173410.json`
+  - 핵심 판정: queue/release/reassign 모두 true
+  - client IDs: released=2, reassigned=4
+- 운영 상태:
+  - PR #6 머지 완료 후 main 기준선에서도 동일 회귀 경로가 정상 동작
