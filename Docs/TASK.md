@@ -1321,3 +1321,27 @@
   - 새 build/publish 후 동일 2기기 smoke 재실행
   - movement sync가 얼마나 줄었는지 확인
   - 남는 오차가 크면 player motion replicate/reconcile 설계로 넘어감
+
+### 2026-03-09 06:41 (KST) 진행 스냅샷
+- [x] 주변 오브젝트 위치 불일치 원인 식별
+  - host log 확인:
+    - `[FishNetScenePlayerAssigner] Regression seed ready for slot 1. player=PlayerB, scrap=Scrap_03, station=RepairStation.`
+  - 해석:
+    - 실제 build smoke에서도 regression assist가 활성화되어 있었고,
+    - host가 `Scrap_03`, `RepairStation` 위치를 테스트용으로 재배치하고 있었다.
+    - `RepairObjectiveNetworkState`는 진행도만 sync하고 transform은 sync하지 않으므로 주변 오브젝트 배치가 양쪽에서 다르게 보일 수밖에 없었다.
+- [x] build smoke에서 regression seed 기본 비활성화
+  - 수정 파일:
+    - Assets/Game/Netcode/Runtime/FishNetScenePlayerAssigner.cs
+  - 변경 내용:
+    - regression seed는 editor에서는 유지
+    - player build에서는 기본 비활성
+    - 필요할 때만 `-interstella-enable-regression-seed 1` 또는 `INTERSTELLA_ENABLE_REGRESSION_SEED=1`로 명시 활성화
+- [x] 검증
+  - Unity script validation:
+    - FishNetScenePlayerAssigner.cs errors=0 warnings=0
+  - EditMode tests:
+    - total=17, passed=17, failed=0
+- [ ] 다음 단계
+  - 새 build/publish 후 주변 오브젝트 배치가 동일하게 보이는지 재확인
+  - 그 다음 플레이어 위치 오차만 남는지 분리 판정

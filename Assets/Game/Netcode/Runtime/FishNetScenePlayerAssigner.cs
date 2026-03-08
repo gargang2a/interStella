@@ -5,6 +5,7 @@ using FishNet.Transporting;
 using InterStella.Game.Features.Player;
 using InterStella.Game.Features.Repair;
 using InterStella.Game.Features.Scavenge;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -46,6 +47,16 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField]
         private bool _logRegressionSeedEvents = true;
 
+        [Header("Runtime Override")]
+        [SerializeField]
+        private bool _allowRuntimeOverride = true;
+
+        [SerializeField]
+        private bool _enableRegressionSeedInPlayerBuilds;
+
+        [SerializeField]
+        private string _enableRegressionSeedArgument = "interstella-enable-regression-seed";
+
         private readonly Dictionary<int, int> _clientToSlot = new Dictionary<int, int>(4);
         private readonly Queue<int> _pendingClientQueue = new Queue<int>(4);
         private readonly HashSet<int> _pendingClientSet = new HashSet<int>();
@@ -54,6 +65,7 @@ namespace InterStella.Game.Netcode.Runtime
         private void Awake()
         {
             ResolveDependenciesIfMissing();
+            ApplyRuntimeOverrides();
         }
 
         private void OnEnable()
@@ -406,6 +418,11 @@ namespace InterStella.Game.Netcode.Runtime
                 return;
             }
 
+            if (!ShouldEnableRegressionSeedForCurrentRuntime())
+            {
+                return;
+            }
+
             if (!bridge.TryGetComponent(out PlayerCarrySocket carrySocket))
             {
                 if (_logRegressionSeedEvents)
@@ -485,6 +502,69 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 Debug.Log($"[FishNetScenePlayerAssigner] Regression seed ready for slot {slotIndex}. player={bridge.name}, scrap={scrapObject.name}, station={stationObject.name}.");
             }
+        }
+
+        private void ApplyRuntimeOverrides()
+        {
+            if (!_allowRuntimeOverride)
+            {
+                return;
+            }
+
+            string runtimeValue = ReadRuntimeOverride(_enableRegressionSeedArgument, "INTERSTELLA_ENABLE_REGRESSION_SEED");
+            if (string.IsNullOrWhiteSpace(runtimeValue))
+            {
+                return;
+            }
+
+            string normalized = runtimeValue.Trim().ToLowerInvariant();
+            _enableRegressionSeedInPlayerBuilds = normalized == "1"
+                || normalized == "true"
+                || normalized == "yes"
+                || normalized == "on";
+        }
+
+        private bool ShouldEnableRegressionSeedForCurrentRuntime()
+        {
+            if (Application.isEditor)
+            {
+                return true;
+            }
+
+            return _enableRegressionSeedInPlayerBuilds;
+        }
+
+        private static string ReadRuntimeOverride(string argumentName, string environmentVariableName)
+        {
+            string fromEnvironment = Environment.GetEnvironmentVariable(environmentVariableName);
+            if (!string.IsNullOrWhiteSpace(fromEnvironment))
+            {
+                return fromEnvironment;
+            }
+
+            if (string.IsNullOrWhiteSpace(argumentName))
+            {
+                return string.Empty;
+            }
+
+            string argumentToken = "-" + argumentName;
+            string equalsToken = argumentToken + "=";
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (arg.StartsWith(equalsToken, StringComparison.OrdinalIgnoreCase))
+                {
+                    return arg.Substring(equalsToken.Length);
+                }
+
+                if (string.Equals(arg, argumentToken, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    return args[i + 1];
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

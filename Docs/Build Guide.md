@@ -1512,3 +1512,13 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-bui
 - 따라서 다음 smoke 목적은:
   - "연결되느냐"가 아니라
   - "이중 tether 물리 제거 후에도 movement sync 오차가 큰가"를 확인하는 것이다.
+
+### 2026-03-09 06:41 (KST) Regression Seed Note
+- build smoke에서 `주변 사물 위치가 서로 다르게 보임` 현상은 regression assist가 실제 build에서도 켜져 있었기 때문이었다.
+- 영향:
+  - host는 `Scrap_03`, `RepairStation`를 테스트용 위치로 옮김
+  - client는 그 transform 변경을 동일하게 받지 못해 주변 배치가 다르게 보일 수 있었음
+- 수정:
+  - regression seed는 이제 editor에서만 기본 활성
+  - player build에서는 기본 비활성
+  - 필요할 때만 `-interstella-enable-regression-seed 1`로 강제 활성화

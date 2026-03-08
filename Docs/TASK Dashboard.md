@@ -102,6 +102,19 @@
 - 의미:
   - 이제 다음 smoke에서 남는 위치 오차는 `이중 테더 물리`보다 `player motion sync 구조` 자체를 더 직접적으로 가리키게 된다.
 
+### 2026-03-09 06:41 (KST)
+
+> [!success] Surrounding object mismatch root cause found
+> build smoke에서 regression assist가 그대로 켜져 있어서 host가 `Scrap_03`와 `RepairStation`를 테스트용 위치로 옮기고 있었다.
+
+- 수정:
+  - regression seed는 editor regression에서만 기본 유지
+  - player build에서는 기본 비활성
+  - 필요할 때만 runtime flag로 명시 활성화
+- 의미:
+  - 다음 smoke에서는 주변 오브젝트 위치 차이를 false discrepancy로 제거한 상태에서
+    실제 player movement sync만 다시 볼 수 있다.
+
 ### 2026-03-08 18:47 (KST)
 
 > [!success] Play Mode startup cleanup done
