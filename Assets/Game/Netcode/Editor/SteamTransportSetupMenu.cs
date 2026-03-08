@@ -29,6 +29,7 @@ namespace InterStella.Game.Netcode.Editor
             NetworkManager networkManager = GetOrAddComponent<NetworkManager>(target);
             FishNetSessionService fishNetSession = GetOrAddComponent<FishNetSessionService>(target);
             SteamSessionService steamSession = GetOrAddComponent<SteamSessionService>(target);
+            SteamworksLobbyService steamLobbyService = GetOrAddComponent<SteamworksLobbyService>(target);
             SteamRelayLoopbackTransportBinder loopbackBinder = GetOrAddComponent<SteamRelayLoopbackTransportBinder>(target);
             SteamRelaySdkTransportBinder sdkBinder = GetOrAddComponent<SteamRelaySdkTransportBinder>(target);
             SteamworksBootstrap steamworksBootstrap = GetOrAddComponent<SteamworksBootstrap>(target);
@@ -48,7 +49,10 @@ namespace InterStella.Game.Netcode.Editor
             SetObjectReference(fishNetSession, "_steamRelayTransportBinderBehaviour", sdkBinder);
 
             SetObjectReference(steamSession, "_networkSessionBehaviour", fishNetSession);
+            SetObjectReference(steamSession, "_steamLobbyServiceBehaviour", steamLobbyService);
             SetObjectReference(steamSession, "_steamworksBootstrap", steamworksBootstrap);
+
+            SetObjectReference(steamLobbyService, "_steamworksBootstrap", steamworksBootstrap);
 
             SetObjectReference(sdkBinder, "_loopbackFallback", loopbackBinder);
             SetObjectReference(sdkBinder, "_steamworksBootstrap", steamworksBootstrap);
@@ -62,6 +66,7 @@ namespace InterStella.Game.Netcode.Editor
             EditorUtility.SetDirty(networkManager);
             EditorUtility.SetDirty(fishNetSession);
             EditorUtility.SetDirty(steamSession);
+            EditorUtility.SetDirty(steamLobbyService);
             EditorUtility.SetDirty(loopbackBinder);
             EditorUtility.SetDirty(sdkBinder);
             EditorUtility.SetDirty(steamworksBootstrap);

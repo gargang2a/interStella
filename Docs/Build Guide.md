@@ -1256,3 +1256,32 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interste
 - EditMode tests: total=12, passed=12, failed=0
 - 신규 검증:
   - `SteamSessionServiceTests.StartSession_HostSteamProvider_UsesBootstrapSteamId`
+
+### 2026-03-08 16:18 (KST) Steam Lobby Guide Update
+- 새 구성 요소:
+  - SteamworksLobbyService
+    - host: SteamMatchmaking.CreateLobby(...)
+    - client: SteamMatchmaking.JoinLobby(...)
+    - metadata: host_steam_id, provider, build_version, created_utc
+- 셋업:
+  - Unity 메뉴 Tools/InterStella/Netcode/Setup Steam Transport Components 실행
+  - MatchSystems에 아래가 함께 있어야 함:
+    - SteamSessionService
+    - SteamworksBootstrap
+    - SteamworksLobbyService
+    - SteamRelaySdkTransportBinder
+    - FishySteamworks
+- invite 입력 경로:
+  - 개발용 override:
+    - -interstella-invite-lobby-id <lobbyId>
+    - -interstella-invite-host-id <steamId>
+  - Steam 런치 경로:
+    - +connect_lobby <lobbyId>
+  - 실행 중 Steam overlay join:
+    - GameLobbyJoinRequested_t를 SteamworksLobbyService가 큐로 받아서 SteamSessionService가 소비
+- 현재 한계:
+  - session start는 기존 ISessionService 형태를 유지하기 위해 Steam lobby create/join 완료까지 짧게 대기한다.
+  - 실제 Steam invite 발신 UI는 아직 없음. 현재는 lobby create/join/수락 경계만 연결됨.
+- 최신 검증:
+  - EditMode tests: total=14, passed=14, failed=0
+

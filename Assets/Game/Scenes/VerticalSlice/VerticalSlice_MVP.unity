@@ -335,6 +335,7 @@ GameObject:
   - component: {fileID: 284635968}
   - component: {fileID: 284635967}
   - component: {fileID: 284635966}
+  - component: {fileID: 284635972}
   m_Layer: 0
   m_Name: MatchSystems
   m_TagString: Untagged
@@ -504,6 +505,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkSessionBehaviour: {fileID: 284635961}
+  _steamLobbyServiceBehaviour: {fileID: 284635972}
   _steamworksBootstrap: {fileID: 284635970}
   _autoCreateLobbyForHost: 1
   _autoAcceptInviteForClient: 1
@@ -516,6 +518,7 @@ MonoBehaviour:
   _allowRuntimeOverride: 1
   _inviteLobbyIdArgument: interstella-invite-lobby-id
   _inviteHostIdArgument: interstella-invite-host-id
+  _connectLobbyArgument: connect_lobby
   _selfSteamIdArgument: interstella-steam-self-id
   _providerArgument: interstella-provider
   _strictRelayArgument: interstella-steam-strict-relay
@@ -654,6 +657,31 @@ MonoBehaviour:
   _multipassTransport: {fileID: 284635967}
   _fishySteamworksTransport: {fileID: 284635966}
   _logBootstrapEvents: 1
+--- !u!114 &284635972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7959e713f88a5e94b8acb9a0195e9713, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _steamworksBootstrap: {fileID: 284635970}
+  _defaultLobbyVisibility: 1
+  _maxLobbyMembers: 2
+  _operationTimeoutMilliseconds: 5000
+  _setLobbyJoinable: 1
+  _acceptOverlayJoinRequests: 1
+  _logLobbyEvents: 1
+  _hostSteamIdKey: host_steam_id
+  _providerKey: provider
+  _buildVersionKey: build_version
+  _createdUtcKey: created_utc
+  _pendingInviteLobbyId: 
+  _lastOperationDetails: 
 --- !u!1 &289819984
 GameObject:
   m_ObjectHideFlags: 0

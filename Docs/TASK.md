@@ -973,3 +973,33 @@
 - [ ] 명시적 제한
   - `direct <-> steam` transport 전환은 Play 진입 전 provider 선택 기준이며,
     `NetworkManager` 초기화 이후 런타임 전환은 현재 미지원
+
+### 2026-03-08 16:18 (KST) 진행 스냅샷
+- [x] 실제 Steam lobby service 경계 추가
+  - 신규 파일:
+    - Assets/Game/Netcode/Runtime/ISteamLobbyService.cs
+    - Assets/Game/Netcode/Runtime/SteamworksLobbyService.cs
+  - 역할:
+    - host CreateLobby + metadata 기록
+    - client JoinLobby + host SteamID 해석
+    - overlay GameLobbyJoinRequested_t invite 큐 소비
+- [x] SteamSessionService synthetic -> actual Steam lobby 승격
+  - 파일: Assets/Game/Netcode/Runtime/SteamSessionService.cs
+  - 변경:
+    - Steam provider일 때 ISteamLobbyService 경계 강제 사용
+    - +connect_lobby 런치 인자 수용
+    - queued invite / active lobby 상태를 Steam join 흐름과 정렬
+- [x] editor 배치/씬 반영
+  - 파일: Assets/Game/Netcode/Editor/SteamTransportSetupMenu.cs
+  - 변경: SteamworksLobbyService 자동 추가 및 SteamSessionService._steamLobbyServiceBehaviour 참조 연결
+  - 씬 저장: Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity
+- [x] 검증
+  - EditMode tests: total=14, passed=14, failed=0
+  - 신규 검증:
+    - SteamSessionServiceTests.StartSession_HostSteamProvider_UsesLobbyServiceCreate
+    - SteamSessionServiceTests.StartSession_ClientSteamProvider_WithQueuedInvite_JoinsThroughLobbyService
+    - SteamSessionServiceTests.StartSession_ClientSteamProvider_ConsumesPendingSteamInvite
+- [ ] 다음 단계
+  - 실제 Steam 2계정/2프로세스 provider=steam smoke 검증
+  - lobby invite 발신(InviteUserToLobby) UI/운영 경계 추가
+  - strict 자동화와 실제 Steam smoke 절차 분리 고정

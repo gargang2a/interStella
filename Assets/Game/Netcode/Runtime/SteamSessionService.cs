@@ -18,6 +18,9 @@ namespace InterStella.Game.Netcode.Runtime
         private MonoBehaviour _networkSessionBehaviour;
 
         [SerializeField]
+        private MonoBehaviour _steamLobbyServiceBehaviour;
+
+        [SerializeField]
         private SteamworksBootstrap _steamworksBootstrap;
 
         [SerializeField]
@@ -57,6 +60,9 @@ namespace InterStella.Game.Netcode.Runtime
         private string _inviteHostIdArgument = "interstella-invite-host-id";
 
         [SerializeField]
+        private string _connectLobbyArgument = "connect_lobby";
+
+        [SerializeField]
         private string _selfSteamIdArgument = "interstella-steam-self-id";
 
         [SerializeField]
@@ -69,6 +75,7 @@ namespace InterStella.Game.Netcode.Runtime
         private LifecycleState _lifecycleState = LifecycleState.Idle;
 
         private ISessionService _networkSession;
+        private ISteamLobbyService _steamLobbyService;
 
         public bool IsSessionActive => _networkSession != null && _networkSession.IsSessionActive;
         public bool IsHost => _networkSession != null && _networkSession.IsHost;
@@ -79,6 +86,7 @@ namespace InterStella.Game.Netcode.Runtime
         private void Awake()
         {
             ResolveNetworkSession();
+            ResolveSteamLobbyServiceIfMissing();
             ResolveSteamworksBootstrapIfMissing();
             ApplyRuntimeOverrides();
             RefreshLifecycleFromState();
@@ -87,6 +95,7 @@ namespace InterStella.Game.Netcode.Runtime
         public bool StartSession()
         {
             ResolveNetworkSession();
+            ResolveSteamLobbyServiceIfMissing();
             ApplyRuntimeOverrides();
 
             if (_networkSession == null)
@@ -142,6 +151,28 @@ namespace InterStella.Game.Netcode.Runtime
                 return false;
             }
 
+            if (IsSteamProviderConfigured())
+            {
+                ResolveSteamLobbyServiceIfMissing();
+                if (_steamLobbyService == null)
+                {
+                    Debug.LogWarning("[SteamSessionService] TryJoinLobby failed: Steam provider is active but ISteamLobbyService is missing.");
+                    return false;
+                }
+
+                if (!_steamLobbyService.TryJoinLobby(normalizedLobbyId, out string resolvedHostSteamId, out string details))
+                {
+                    Debug.LogWarning("[SteamSessionService] TryJoinLobby failed: " + details);
+                    return false;
+                }
+
+                _activeLobbyId = normalizedLobbyId;
+                _activeHostSteamId = Normalize(string.IsNullOrWhiteSpace(resolvedHostSteamId) ? hostSteamId : resolvedHostSteamId);
+                _lifecycleState = LifecycleState.LobbyReady;
+                Debug.Log($"[SteamSessionService] Lobby joined via Steam. lobbyId={_activeLobbyId}, hostSteamId={_activeHostSteamId}. {details}");
+                return true;
+            }
+
             _activeLobbyId = normalizedLobbyId;
             _activeHostSteamId = Normalize(hostSteamId);
             _lifecycleState = LifecycleState.LobbyReady;
@@ -155,6 +186,28 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 Debug.LogWarning("[SteamSessionService] TryCreateHostLobby failed: current runtime is not host.");
                 return false;
+            }
+
+            if (IsSteamProviderConfigured())
+            {
+                ResolveSteamLobbyServiceIfMissing();
+                if (_steamLobbyService == null)
+                {
+                    Debug.LogWarning("[SteamSessionService] TryCreateHostLobby failed: Steam provider is active but ISteamLobbyService is missing.");
+                    return false;
+                }
+
+                if (!_steamLobbyService.TryCreateLobby(out string lobbyId, out string hostSteamId, out string details))
+                {
+                    Debug.LogWarning("[SteamSessionService] TryCreateHostLobby failed: " + details);
+                    return false;
+                }
+
+                _activeLobbyId = Normalize(lobbyId);
+                _activeHostSteamId = Normalize(hostSteamId);
+                _lifecycleState = LifecycleState.LobbyReady;
+                Debug.Log($"[SteamSessionService] Host Steam lobby created. lobbyId={_activeLobbyId}, hostSteamId={_activeHostSteamId}. {details}");
+                return true;
             }
 
             if (string.IsNullOrWhiteSpace(_activeLobbyId))
@@ -178,6 +231,13 @@ namespace InterStella.Game.Netcode.Runtime
 
         public void LeaveActiveLobby()
         {
+            string lobbyIdToLeave = _activeLobbyId;
+            if (IsSteamProviderConfigured())
+            {
+                ResolveSteamLobbyServiceIfMissing();
+                _steamLobbyService?.LeaveLobby(lobbyIdToLeave);
+            }
+
             _activeLobbyId = string.Empty;
             _activeHostSteamId = string.Empty;
         }
@@ -186,6 +246,7 @@ namespace InterStella.Game.Netcode.Runtime
         private void OnValidate()
         {
             ResolveNetworkSession();
+            ResolveSteamLobbyServiceIfMissing();
             ResolveSteamworksBootstrapIfMissing();
             RefreshLifecycleFromState();
         }
@@ -207,7 +268,7 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 if (string.IsNullOrWhiteSpace(_activeHostSteamId))
                 {
-                    _activeHostSteamId = Normalize(_localSteamUserId);
+                    _activeHostSteamId = ResolvePreferredLocalHostId();
                 }
 
                 _lifecycleState = LifecycleState.LobbyReady;
@@ -225,6 +286,8 @@ namespace InterStella.Game.Netcode.Runtime
 
         private bool EnsureClientLobby()
         {
+            CaptureQueuedInviteFromSteam();
+
             if (!string.IsNullOrWhiteSpace(_activeLobbyId))
             {
                 _lifecycleState = LifecycleState.LobbyReady;
@@ -269,6 +332,25 @@ namespace InterStella.Game.Netcode.Runtime
             _networkSession = _networkSessionBehaviour as ISessionService;
         }
 
+        private void ResolveSteamLobbyServiceIfMissing()
+        {
+            if (_steamLobbyServiceBehaviour == null)
+            {
+                _steamLobbyServiceBehaviour = GetComponent<SteamworksLobbyService>();
+            }
+
+            if (_steamLobbyServiceBehaviour == null)
+            {
+                Component interfaceComponent = GetComponent(typeof(ISteamLobbyService));
+                if (interfaceComponent is MonoBehaviour lobbyServiceBehaviour)
+                {
+                    _steamLobbyServiceBehaviour = lobbyServiceBehaviour;
+                }
+            }
+
+            _steamLobbyService = _steamLobbyServiceBehaviour as ISteamLobbyService;
+        }
+
         private void ResolveSteamworksBootstrapIfMissing()
         {
             if (_steamworksBootstrap == null)
@@ -291,15 +373,45 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             string inviteLobbyId = ReadRuntimeOverride(_inviteLobbyIdArgument, "INTERSTELLA_INVITE_LOBBY_ID");
+            if (string.IsNullOrWhiteSpace(inviteLobbyId))
+            {
+                inviteLobbyId = ReadCommandLineOverride(_connectLobbyArgument, '+');
+            }
+
+            if (string.IsNullOrWhiteSpace(inviteLobbyId))
+            {
+                CaptureQueuedInviteFromSteam();
+                inviteLobbyId = _queuedInviteLobbyId;
+            }
+
             if (!string.IsNullOrWhiteSpace(inviteLobbyId))
             {
                 string inviteHostId = ReadRuntimeOverride(_inviteHostIdArgument, "INTERSTELLA_INVITE_HOST_ID");
+                if (string.IsNullOrWhiteSpace(inviteHostId))
+                {
+                    inviteHostId = _queuedInviteHostSteamId;
+                }
+
                 QueueInvite(inviteLobbyId, inviteHostId);
             }
 
             if (ReadRuntimeFlag(_strictRelayArgument, "INTERSTELLA_STEAM_STRICT_RELAY"))
             {
                 _allowDirectFallbackIfRelayUnavailable = false;
+            }
+        }
+
+        private void CaptureQueuedInviteFromSteam()
+        {
+            if (!IsSteamProviderConfigured())
+            {
+                return;
+            }
+
+            ResolveSteamLobbyServiceIfMissing();
+            if (_steamLobbyService != null && _steamLobbyService.TryConsumePendingInvite(out string pendingInviteLobbyId))
+            {
+                QueueInvite(pendingInviteLobbyId, string.Empty);
             }
         }
 
@@ -392,7 +504,17 @@ namespace InterStella.Game.Netcode.Runtime
                 return string.Empty;
             }
 
-            string argumentToken = "-" + argumentName;
+            return ReadCommandLineOverride(argumentName, '-');
+        }
+
+        private static string ReadCommandLineOverride(string argumentName, char prefix)
+        {
+            if (string.IsNullOrWhiteSpace(argumentName))
+            {
+                return string.Empty;
+            }
+
+            string argumentToken = prefix + argumentName;
             string equalsToken = argumentToken + "=";
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length; i++)
