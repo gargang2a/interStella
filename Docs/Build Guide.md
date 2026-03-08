@@ -1462,3 +1462,10 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-bui
 ```
   3. `Builds/SteamSmokeWindows64/build-info.txt`에서 branch/commit 확인
   4. host/client는 `RunHost.bat` / `RunClient.bat <lobbyId>` 사용
+
+### 2026-03-09 05:00 (KST) Clone Path Auto-Detect Update
+- `sync-and-build-steam-smoke.ps1`, `build-steam-smoke.ps1`, `launch-steam-build-smoke.ps1`는 더 이상 `C:\Unity\interStella`를 고정 경로로 가정하지 않는다.
+- 현재 clone 위치를 기준으로 project/build/log 경로를 계산하도록 보정했다.
+- 추가 동작:
+  - `Logs` 폴더가 없으면 자동 생성
+  - headless batch build가 불가능하면 `BUILD_REQUIRES_UNITY_MENU`를 출력하고 Unity 메뉴 빌드로 넘어가도록 안내

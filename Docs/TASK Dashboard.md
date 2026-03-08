@@ -64,6 +64,11 @@
 > [!success] Desktop/laptop Git smoke workflow added
 > 두 머신이 같은 브랜치를 직접 pull/build/run하도록 `sync-and-build-steam-smoke.ps1`, `.bat`, `build-info.txt` 경계를 추가했다.
 
+### 2026-03-09 05:00 (KST)
+
+> [!success] Clone path auto-detect fixed
+> 노트북 clone 경로가 `C:\Unity\interStella`가 아니어도 workflow script가 현재 저장소 위치를 기준으로 동작하도록 수정했다.
+
 ### 2026-03-08 18:47 (KST)
 
 > [!success] Play Mode startup cleanup done

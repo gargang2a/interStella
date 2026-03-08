@@ -1,8 +1,8 @@
 param(
     [ValidateSet("host", "client")]
     [string]$Mode = "client",
-    [string]$BuildExePath = "C:\Unity\interStella\Builds\SteamSmokeWindows64\interStella-Smoke.exe",
-    [string]$LogDirectory = "C:\Unity\interStella\Logs",
+    [string]$BuildExePath = "",
+    [string]$LogDirectory = "",
     [string]$LobbyId = "",
     [string]$JoinArgs = "",
     [switch]$UseClipboardJoinArgs,
@@ -14,6 +14,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function Resolve-DefaultProjectPath {
+    return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\..\.."))
+}
 
 function Assert-File {
     param(
@@ -147,7 +151,18 @@ function Wait-BuildBoot {
     }
 }
 
-Assert-Directory -Path $LogDirectory -Label "Log directory"
+$projectPath = Resolve-DefaultProjectPath
+if ([string]::IsNullOrWhiteSpace($BuildExePath)) {
+    $BuildExePath = Join-Path $projectPath "Builds\SteamSmokeWindows64\interStella-Smoke.exe"
+}
+
+if ([string]::IsNullOrWhiteSpace($LogDirectory)) {
+    $LogDirectory = Join-Path $projectPath "Logs"
+}
+
+if (-not (Test-Path $LogDirectory -PathType Container)) {
+    New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
+}
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $logPath = Join-Path $LogDirectory ("steam-build-{0}-{1}.log" -f $Mode, $timestamp)

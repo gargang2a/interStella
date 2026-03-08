@@ -1,8 +1,8 @@
 param(
-    [string]$ProjectPath = "C:\Unity\interStella",
+    [string]$ProjectPath = "",
     [string]$UnityEditorPath = "C:\Program Files\Unity\Hub\Editor\2022.3.62f2\Editor\Unity.exe",
     [string]$OutputPath = "Builds/SteamSmokeWindows64/interStella-Smoke.exe",
-    [string]$LogDirectory = "C:\Unity\interStella\Logs",
+    [string]$LogDirectory = "",
     [string]$HubSessionId = "",
     [string]$AccessToken = "",
     [string]$LicensingIpc = "",
@@ -12,6 +12,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function Resolve-DefaultProjectPath {
+    return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\..\.."))
+}
 
 function Assert-File {
     param(
@@ -80,9 +84,20 @@ function Extract-ArgumentValue {
     return $match.Groups[3].Value
 }
 
-Assert-Directory -Path $ProjectPath -Label "Project"
-Assert-Directory -Path $LogDirectory -Label "Log directory"
 Assert-File -Path $UnityEditorPath -Label "Unity editor"
+
+if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+    $ProjectPath = Resolve-DefaultProjectPath
+}
+
+if ([string]::IsNullOrWhiteSpace($LogDirectory)) {
+    $LogDirectory = Join-Path $ProjectPath "Logs"
+}
+
+Assert-Directory -Path $ProjectPath -Label "Project"
+if (-not (Test-Path $LogDirectory -PathType Container)) {
+    New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
+}
 
 $hostCommandLine = Get-HostCommandLine -ResolvedProjectPath $ProjectPath
 $projectOpenInEditor = -not [string]::IsNullOrWhiteSpace($hostCommandLine)

@@ -1237,3 +1237,15 @@
 - [ ] 다음 단계
   - 두 머신 모두 새 workflow 기준으로 pull/build/run을 통일
   - stale build가 아닌 최신 build에서 owner/input/camera smoke 재검증
+
+### 2026-03-09 05:00 (KST) 진행 스냅샷
+- [x] clone 경로 자동 인식 보정
+  - 수정 파일:
+    - .codex/workflows/netcode/sync-and-build-steam-smoke.ps1
+    - .codex/workflows/netcode/build-steam-smoke.ps1
+    - .codex/workflows/netcode/launch-steam-build-smoke.ps1
+  - 수정 내용:
+    - 더 이상 `C:\Unity\interStella` 고정 경로를 가정하지 않음
+    - 현재 clone 위치 기준으로 project/build/log 경로 계산
+    - `Logs` 폴더 자동 생성
+    - headless build가 불가능한 경우 Unity 메뉴 빌드 안내 메시지 출력

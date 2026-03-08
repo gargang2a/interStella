@@ -1,5 +1,5 @@
 param(
-    [string]$ProjectPath = "C:\Unity\interStella",
+    [string]$ProjectPath = "",
     [switch]$SkipPull,
     [switch]$SkipBuild,
     [switch]$AllowDirty,
@@ -8,6 +8,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function Resolve-DefaultProjectPath {
+    return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\..\.."))
+}
 
 function Invoke-Git {
     param(
@@ -84,6 +88,10 @@ function Get-BuildInfoPath {
     return Join-Path $RepositoryPath "Builds\SteamSmokeWindows64\build-info.txt"
 }
 
+if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+    $ProjectPath = Resolve-DefaultProjectPath
+}
+
 Assert-GitRepository -RepositoryPath $ProjectPath
 
 $branchName = Get-GitOutput -RepositoryPath $ProjectPath rev-parse --abbrev-ref HEAD
@@ -144,9 +152,21 @@ if ($ReleaseBuild) {
     $buildArguments["ReleaseBuild"] = $true
 }
 
-& $buildScriptPath @buildArguments
-if ($LASTEXITCODE -ne 0) {
-    throw "Steam smoke build script failed."
+try {
+    & $buildScriptPath @buildArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Steam smoke build script failed."
+    }
+}
+catch {
+    $message = $_.Exception.Message
+    if ($message -like "*Use the Unity menu instead*") {
+        Write-Output "BUILD_REQUIRES_UNITY_MENU"
+        Write-Output $message
+        return
+    }
+
+    throw
 }
 
 $buildInfoPath = Get-BuildInfoPath -RepositoryPath $ProjectPath
