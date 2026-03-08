@@ -14,6 +14,9 @@ namespace InterStella.Game.Netcode.Runtime
         private bool _initializeOnAwake = true;
 
         [SerializeField]
+        private bool _initializeOnlyWhenSteamProviderSelected = true;
+
+        [SerializeField]
         private bool _restartAppIfNecessary;
 
         [SerializeField]
@@ -52,7 +55,7 @@ namespace InterStella.Game.Netcode.Runtime
                 DontDestroyOnLoad(gameObject);
             }
 
-            if (_initializeOnAwake)
+            if (_initializeOnAwake && ShouldInitializeOnAwake())
             {
                 TryInitialize();
             }
@@ -178,6 +181,28 @@ namespace InterStella.Game.Netcode.Runtime
             return !string.IsNullOrWhiteSpace(steamId);
         }
 
+        private bool ShouldInitializeOnAwake()
+        {
+            if (!_initializeOnlyWhenSteamProviderSelected)
+            {
+                return true;
+            }
+
+            string runtimeProvider = ReadRuntimeOverride("interstella-provider", "INTERSTELLA_PROVIDER");
+            if (!string.IsNullOrWhiteSpace(runtimeProvider))
+            {
+                return IsSteamProviderValue(runtimeProvider);
+            }
+
+            FishNetSessionService fishNetSession = GetComponent<FishNetSessionService>();
+            if (fishNetSession != null)
+            {
+                return fishNetSession.ConfiguredForSteamRelay;
+            }
+
+            return false;
+        }
+
         private bool Fail(string reason)
         {
             _isInitialized = false;
@@ -191,6 +216,48 @@ namespace InterStella.Game.Netcode.Runtime
             }
 
             return false;
+        }
+
+        private static string ReadRuntimeOverride(string argumentName, string environmentVariableName)
+        {
+            string fromEnvironment = Environment.GetEnvironmentVariable(environmentVariableName);
+            if (!string.IsNullOrWhiteSpace(fromEnvironment))
+            {
+                return fromEnvironment;
+            }
+
+            string argumentToken = "-" + argumentName;
+            string equalsToken = argumentToken + "=";
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (arg.StartsWith(equalsToken, StringComparison.OrdinalIgnoreCase))
+                {
+                    return arg.Substring(equalsToken.Length);
+                }
+
+                if (string.Equals(arg, argumentToken, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    return args[i + 1];
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static bool IsSteamProviderValue(string rawValue)
+        {
+            switch ((rawValue ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "steam":
+                case "steamrelay":
+                case "steam-relay":
+                case "relay":
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

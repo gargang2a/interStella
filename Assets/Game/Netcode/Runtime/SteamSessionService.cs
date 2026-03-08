@@ -86,6 +86,7 @@ namespace InterStella.Game.Netcode.Runtime
 
         public bool IsSessionActive => _networkSession != null && _networkSession.IsSessionActive;
         public bool IsHost => _networkSession != null && _networkSession.IsHost;
+        public bool UsesSteamProvider => IsSteamProviderConfigured();
         public string ActiveLobbyId => _activeLobbyId;
         public string ActiveHostSteamId => _activeHostSteamId;
         public string StateName => _lifecycleState.ToString();
@@ -111,6 +112,11 @@ namespace InterStella.Game.Netcode.Runtime
                 _lifecycleState = LifecycleState.Failed;
                 Debug.LogWarning("[SteamSessionService] StartSession failed: network session dependency is missing.");
                 return false;
+            }
+
+            if (!IsSteamProviderConfigured())
+            {
+                return StartUnderlyingDirectSession();
             }
 
             if (!PrepareLobbyBootstrap())
@@ -356,12 +362,38 @@ namespace InterStella.Game.Netcode.Runtime
         {
             if (_networkSessionBehaviour is FishNetSessionService fishNetSession)
             {
+                if (!IsSteamProviderConfigured())
+                {
+                    fishNetSession.UseDirectBootstrap();
+                    Debug.Log("[SteamSessionService] Applied direct bootstrap to FishNet.");
+                    return;
+                }
+
                 fishNetSession.UseSteamBootstrap(_activeLobbyId, _activeHostSteamId, _allowDirectFallbackIfRelayUnavailable);
                 Debug.Log($"[SteamSessionService] Applied Steam bootstrap to FishNet. provider={fishNetSession.ActiveConnectionProvider}, lobbyId={fishNetSession.ActiveSteamLobbyId}, binder={fishNetSession.HasSteamRelayTransportBinder}.");
                 return;
             }
 
             Debug.LogWarning("[SteamSessionService] Underlying session is not FishNetSessionService. Steam bootstrap was not applied.");
+        }
+
+        private bool StartUnderlyingDirectSession()
+        {
+            LeaveActiveLobby();
+            ConfigureUnderlyingTransport();
+
+            bool started = _networkSession.StartSession();
+            _lifecycleState = started ? LifecycleState.SessionActive : LifecycleState.Failed;
+            if (started)
+            {
+                Debug.Log($"[SteamSessionService] Session started in direct mode. networkHost={_networkSession.IsHost}.");
+            }
+            else
+            {
+                Debug.LogWarning("[SteamSessionService] Underlying direct network session start failed.");
+            }
+
+            return started;
         }
 
         private void ResolveNetworkSession()

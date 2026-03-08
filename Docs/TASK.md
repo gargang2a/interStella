@@ -1095,3 +1095,38 @@
 - [ ] 다음 단계
   - 팀원과 실제 2실계정 host build / client build smoke 실행
   - build 로그 기준 lobby 생성, join, binder 적용 성공 패턴 정리
+
+### 2026-03-08 18:41 (KST) 진행 스냅샷
+- [x] Obsidian 가독성 보강 경계 추가
+  - 신규 파일:
+    - Docs/TASK Dashboard.md
+  - 목적:
+    - `TASK.md`는 append-only 원본 로그로 유지
+    - `TASK Dashboard.md`는 Obsidian에서 읽기 좋은 보기 전용 요약으로 사용
+- [x] 운영 규칙 고정
+  - 상태 갱신은 계속 `TASK.md`를 먼저 업데이트한다.
+  - 필요 시 같은 시점의 핵심 상태만 `TASK Dashboard.md`에 반영한다.
+- [ ] 다음 단계
+  - 실제 Steam smoke 결과가 나오면 dashboard의 Current Focus / Latest Snapshot도 함께 갱신
+
+### 2026-03-08 18:47 (KST) 진행 스냅샷
+- [x] Play Mode startup 경고/예외 정리
+  - 수정 파일:
+    - Assets/Game/Netcode/Runtime/SteamSessionService.cs
+    - Assets/Game/Features/Stations/StationMatchController.cs
+    - Assets/Game/Netcode/Runtime/SteamworksBootstrap.cs
+    - Assets/FishNet/Plugins/FishySteamworks/FishySteamworks.cs
+    - Assets/Game/Netcode/Editor/Tests/SteamSessionServiceTests.cs
+- [x] 수정 내용
+  - direct provider에서는 `SteamSessionService`가 Steam bootstrap을 강제하지 않도록 분기
+  - `StationMatchController`가 Steam provider가 아닐 때 `SteamSessionService`를 우선 선택하지 않도록 보정
+  - `SteamworksBootstrap`이 direct 시작에서는 `Awake` 즉시 초기화를 시도하지 않도록 보정
+  - `FishySteamworks.Update()` null guard 추가
+- [x] 검증
+  - EditMode tests: total=17, passed=17, failed=0
+  - Play Mode 재검증:
+    - 기존 `Steam is probably not running` warning 미재현
+    - 기존 `FishySteamworks.Update()` `NullReferenceException` 미재현
+- [ ] 비고
+  - 현재 콘솔에는 MCP 연결 로그와 개발용 info 로그는 남아 있을 수 있다.
+  - 이번 수정 대상은 warning/error/exception 정리였다.

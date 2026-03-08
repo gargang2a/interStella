@@ -148,13 +148,18 @@ namespace InterStella.Game.Features.Stations
         private ISessionService ResolveSessionService()
         {
             ISessionService configured = _sessionServiceBehaviour as ISessionService;
-            if (configured is SteamSessionService)
+            if (configured is SteamSessionService configuredSteam)
             {
-                return configured;
+                if (configuredSteam.UsesSteamProvider)
+                {
+                    return configuredSteam;
+                }
+
+                configured = null;
             }
 
             SteamSessionService discoveredSteam = FindObjectOfType<SteamSessionService>();
-            if (discoveredSteam != null)
+            if (discoveredSteam != null && discoveredSteam.UsesSteamProvider)
             {
                 _sessionServiceBehaviour = discoveredSteam;
                 Debug.Log("[StationMatchController] Session service switched to discovered SteamSessionService.");

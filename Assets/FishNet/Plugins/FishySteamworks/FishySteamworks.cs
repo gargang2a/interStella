@@ -109,7 +109,7 @@ namespace FishySteamworks
 
         private void Update()
         {
-            _clientHost.CheckSetStarted();
+            _clientHost?.CheckSetStarted();
         }
 
         #region Setup.

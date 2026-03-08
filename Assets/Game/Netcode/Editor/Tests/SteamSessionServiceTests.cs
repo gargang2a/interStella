@@ -11,11 +11,14 @@ namespace InterStella.Game.Netcode.Editor.Tests
         private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
 
         [Test]
-        public void StartSession_HostAutoCreateLobby_Succeeds()
+        public void StartSession_DirectProvider_Host_DelegatesToUnderlyingSession()
         {
+            string previousProvider = Environment.GetEnvironmentVariable("INTERSTELLA_PROVIDER");
             GameObject root = new GameObject("SteamSessionServiceTests_Host");
             try
             {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", null);
+
                 FakeNetworkSessionService fakeSession = root.AddComponent<FakeNetworkSessionService>();
                 fakeSession.Configure(isHost: true, startResult: true);
 
@@ -27,11 +30,13 @@ namespace InterStella.Game.Netcode.Editor.Tests
 
                 Assert.That(started, Is.True);
                 Assert.That(fakeSession.StartCallCount, Is.EqualTo(1));
-                Assert.That(string.IsNullOrWhiteSpace(steamSession.ActiveLobbyId), Is.False);
+                Assert.That(steamSession.ActiveLobbyId, Is.EqualTo(string.Empty));
+                Assert.That(steamSession.ActiveHostSteamId, Is.EqualTo(string.Empty));
                 Assert.That(steamSession.StateName, Is.EqualTo("SessionActive"));
             }
             finally
             {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", previousProvider);
                 UnityEngine.Object.DestroyImmediate(root);
             }
         }
@@ -39,9 +44,12 @@ namespace InterStella.Game.Netcode.Editor.Tests
         [Test]
         public void StartSession_ClientWithoutInvite_Fails()
         {
+            string previousProvider = Environment.GetEnvironmentVariable("INTERSTELLA_PROVIDER");
             GameObject root = new GameObject("SteamSessionServiceTests_ClientFail");
             try
             {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", "steam");
+
                 FakeNetworkSessionService fakeSession = root.AddComponent<FakeNetworkSessionService>();
                 fakeSession.Configure(isHost: false, startResult: true);
 
@@ -57,6 +65,7 @@ namespace InterStella.Game.Netcode.Editor.Tests
             }
             finally
             {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", previousProvider);
                 UnityEngine.Object.DestroyImmediate(root);
             }
         }
@@ -64,14 +73,21 @@ namespace InterStella.Game.Netcode.Editor.Tests
         [Test]
         public void StartSession_ClientWithQueuedInvite_Succeeds()
         {
+            string previousProvider = Environment.GetEnvironmentVariable("INTERSTELLA_PROVIDER");
             GameObject root = new GameObject("SteamSessionServiceTests_ClientInvite");
             try
             {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", "steam");
+
                 FakeNetworkSessionService fakeSession = root.AddComponent<FakeNetworkSessionService>();
                 fakeSession.Configure(isHost: false, startResult: true);
 
+                FakeSteamLobbyService fakeLobbyService = root.AddComponent<FakeSteamLobbyService>();
+                fakeLobbyService.ConfigureJoin(result: true, "host-001");
+
                 SteamSessionService steamSession = root.AddComponent<SteamSessionService>();
                 SetPrivateField(steamSession, "_networkSessionBehaviour", fakeSession);
+                SetPrivateField(steamSession, "_steamLobbyServiceBehaviour", fakeLobbyService);
                 SetPrivateField(steamSession, "_allowRuntimeOverride", false);
                 steamSession.QueueInvite("lobby-001", "host-001");
 
@@ -85,6 +101,38 @@ namespace InterStella.Game.Netcode.Editor.Tests
             }
             finally
             {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", previousProvider);
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void StartSession_DirectProvider_ClientWithoutInvite_DelegatesToUnderlyingSession()
+        {
+            string previousProvider = Environment.GetEnvironmentVariable("INTERSTELLA_PROVIDER");
+            GameObject root = new GameObject("SteamSessionServiceTests_DirectClient");
+            try
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", null);
+
+                FakeNetworkSessionService fakeSession = root.AddComponent<FakeNetworkSessionService>();
+                fakeSession.Configure(isHost: false, startResult: true);
+
+                SteamSessionService steamSession = root.AddComponent<SteamSessionService>();
+                SetPrivateField(steamSession, "_networkSessionBehaviour", fakeSession);
+                SetPrivateField(steamSession, "_allowRuntimeOverride", false);
+
+                bool started = steamSession.StartSession();
+
+                Assert.That(started, Is.True);
+                Assert.That(fakeSession.StartCallCount, Is.EqualTo(1));
+                Assert.That(steamSession.ActiveLobbyId, Is.EqualTo(string.Empty));
+                Assert.That(steamSession.ActiveHostSteamId, Is.EqualTo(string.Empty));
+                Assert.That(steamSession.StateName, Is.EqualTo("SessionActive"));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", previousProvider);
                 UnityEngine.Object.DestroyImmediate(root);
             }
         }

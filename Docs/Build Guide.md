@@ -1364,3 +1364,22 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam
   - Unity menu build success
   - 산출물 생성 및 `steam_appid.txt` 복사 확인
   - build helper / launch helper PowerShell parse OK
+
+### 2026-03-08 18:41 (KST) Obsidian View Update
+- `TASK.md`가 길어져 Live Preview 편집 구간에서 raw markdown이 더 많이 보일 수 있다.
+- 보기 전용 요약 노트 추가:
+  - `Docs/TASK Dashboard.md`
+- 운영 원칙:
+  - 상세 실행 이력은 계속 `TASK.md` append-only 유지
+  - Obsidian에서 빠르게 상태 확인할 때는 `TASK Dashboard.md` 우선 사용
+
+### 2026-03-08 18:47 (KST) Play Mode Startup Cleanup
+- local direct Play Mode 기준 기대 로그 정리:
+  - 허용:
+    - `Startup transport prepared for direct mode using Tugboat`
+    - `Starting session provider=Direct`
+    - FishNet 접속/슬롯 할당 info 로그
+  - 비허용:
+    - `Steam is probably not running` warning
+    - `FishySteamworks.Update()` 관련 `NullReferenceException`
+- 이번 수정으로 direct provider에서는 Steam bootstrap이 startup에 개입하지 않도록 정리했다.
