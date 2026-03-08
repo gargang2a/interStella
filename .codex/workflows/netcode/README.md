@@ -136,3 +136,19 @@ Steam manual smoke helpers:
   3. Run Copy Join Launch Args.
   4. Launch the clone client editor with launch-steam-client.ps1 -UseClipboardJoinArgs.
   5. If overlay invite is needed again, run Invite Configured Friend.
+
+Steam build smoke helpers:
+- Build from the open Unity editor when local ignored art/assets must be included:
+  - Tools/InterStella/Build/Build Steam Smoke Windows64
+- Batch build wrapper (requires the project to be closed and Unity Hub licensing args):
+  - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\build-steam-smoke.ps1
+- Built executable launcher:
+  - Host:
+    - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam-build-smoke.ps1 -Mode host -WaitForBoot
+  - Client:
+    - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam-build-smoke.ps1 -Mode client -JoinArgs "-interstella-provider steam +connect_lobby <lobbyId>" -StrictSteamRelay -WaitForBoot
+- Recommended build smoke flow:
+  1. Build once from the Unity menu in the main project.
+  2. Launch the built host executable and wait for Steam lobby creation.
+  3. Capture the lobby id from the host log or snapshot tooling.
+  4. Launch the built client executable with +connect_lobby.

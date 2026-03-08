@@ -1067,3 +1067,31 @@
 - [ ] 다음 단계
   - 실제 2실계정에서 host menu -> clipboard join args -> launch helper 흐름 검증
   - smoke 성공/실패 로그 패턴을 helper에 더 명확히 반영
+
+### 2026-03-08 18:19 (KST) 진행 스냅샷
+- [x] Steam build smoke 경로 추가
+  - 신규 파일:
+    - Assets/Game/Netcode/Editor/InterStellaBuildSmoke.cs
+    - .codex/workflows/netcode/build-steam-smoke.ps1
+    - .codex/workflows/netcode/launch-steam-build-smoke.ps1
+  - 역할:
+    - Unity 메뉴 `Tools/InterStella/Build/Build Steam Smoke Windows64`로 테스트용 Windows64 빌드 생성
+    - batch wrapper는 명시적으로 같은 프로젝트 중복 오픈을 차단하고, Hub licensing 인자 누락 시 즉시 실패 이유를 출력
+    - built exe를 host/client 모드로 실행하는 표준 launcher 제공
+- [x] 검증
+  - Unity editor menu build 성공
+  - 산출물:
+    - Builds/SteamSmokeWindows64/interStella-Smoke.exe
+    - Builds/SteamSmokeWindows64/steam_appid.txt
+  - console:
+    - [InterStella][BuildSmoke] Windows64 smoke build succeeded.
+  - PowerShell parse:
+    - build-steam-smoke.ps1 OK
+    - launch-steam-build-smoke.ps1 OK
+- [x] 운영 결정 고정
+  - 로컬 ignore된 시각 에셋 차이를 피하려는 Steam smoke는 `editor clone smoke`보다 `single source build smoke`를 우선한다.
+  - local ignored art를 포함해야 할 때는 main project 열린 상태에서 Unity 메뉴 빌드를 사용한다.
+  - 같은 프로젝트가 열린 상태의 batch build는 미지원으로 명시한다.
+- [ ] 다음 단계
+  - 팀원과 실제 2실계정 host build / client build smoke 실행
+  - build 로그 기준 lobby 생성, join, binder 적용 성공 패턴 정리

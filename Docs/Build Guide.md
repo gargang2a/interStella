@@ -1335,3 +1335,32 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interste
   2. Log Session Snapshot
   3. Copy Join Launch Args
   4. launch-steam-client.ps1 -UseClipboardJoinArgs -StrictSteamRelay -WaitForBoot
+
+### 2026-03-08 18:19 (KST) Steam Build Smoke Update
+- 목적:
+  - gitignore된 로컬 비주얼/머티리얼 차이 때문에 팀원 clone과 화면이 갈라질 수 있는 상황에서,
+    테스트 대상 화면을 단일 build 산출물로 고정한다.
+- 권장 경로:
+  1. main project가 열린 상태에서 Unity 메뉴 실행
+     - Tools/InterStella/Build/Build Steam Smoke Windows64
+  2. 산출물 확인
+     - Builds/SteamSmokeWindows64/interStella-Smoke.exe
+     - Builds/SteamSmokeWindows64/steam_appid.txt
+  3. host 실행
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam-build-smoke.ps1 -Mode host -WaitForBoot
+```
+  4. client 실행
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam-build-smoke.ps1 -Mode client -JoinArgs "-interstella-provider steam +connect_lobby <lobbyId>" -StrictSteamRelay -WaitForBoot
+```
+- batch build wrapper 의미:
+  - `.codex/workflows/netcode/build-steam-smoke.ps1`
+  - 사용 조건:
+    - 같은 프로젝트가 Unity에서 열려 있지 않아야 한다.
+    - Unity Hub licensing 인자(`HubSessionId`, `AccessToken`, `LicensingIpc`)가 준비되어 있어야 한다.
+  - 위 조건이 맞지 않으면 즉시 이유를 출력하고 중단한다.
+- 최신 검증:
+  - Unity menu build success
+  - 산출물 생성 및 `steam_appid.txt` 복사 확인
+  - build helper / launch helper PowerShell parse OK
