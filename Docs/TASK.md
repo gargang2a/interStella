@@ -1261,3 +1261,31 @@
 - [ ] 다음 단계
   - 데스크탑에서 최신 build를 OneDrive로 publish
   - 노트북에서 OneDrive 폴더 기준 RunClient smoke 실행
+
+### 2026-03-09 06:15 (KST) 진행 스냅샷
+- [x] OneDrive smoke의 stale lobbyId 운영 리스크 확인
+  - 실제 로그:
+    - host 생성 lobbyId: `109775242141121536`
+    - client 입력 lobbyId: `109775242139457962`
+  - 결과:
+    - `Steam lobby join failed with response=k_EChatRoomEnterResponseDoesntExist`
+  - 해석:
+    - 노트북 화면 정지는 소유권/카메라 이슈 재현이 아니라 잘못된 lobbyId로 join 실패한 케이스였다.
+- [x] shared lobby file 경계 추가
+  - 수정 파일:
+    - Assets/Game/Netcode/Runtime/SteamSessionService.cs
+    - Assets/Game/Netcode/Editor/InterStellaBuildSmoke.cs
+  - 변경 내용:
+    - host build가 현재 lobby 정보를 `current-steam-lobby.txt`에 기록
+    - `RunClient.bat`가 인자 없을 때 shared lobby file의 `lobby_id`를 자동 사용
+    - host session 시작 전 이전 stale lobby file은 먼저 삭제
+- [x] 검증
+  - Unity script validation:
+    - SteamSessionService.cs errors=0 warnings=0
+    - InterStellaBuildSmoke.cs errors=0 warnings=0
+  - EditMode tests:
+    - total=17, passed=17, failed=0
+- [ ] 다음 단계
+  - 새 build를 다시 생성하고 OneDrive로 publish
+  - 데스크탑 `RunHost.bat` 후 노트북 `RunClient.bat`로 재실행
+  - 그 다음에 owner/input/camera smoke 결과를 다시 판정

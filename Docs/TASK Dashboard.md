@@ -74,6 +74,19 @@
 > [!success] OneDrive publish workflow added
 > 데스크탑 build를 OneDrive 공유 폴더로 복사하고, 노트북은 그 폴더에서 바로 `RunClient.bat`를 실행하는 경로를 추가했다.
 
+### 2026-03-09 06:15 (KST)
+
+> [!success] Shared lobby file automation added
+> `current-steam-lobby.txt`를 기준으로 host가 최신 lobbyId를 공유하고, client는 `RunClient.bat` 실행 시 그 값을 자동으로 읽도록 바꿨다.
+
+- 확인된 실제 실패 원인:
+  - host와 client가 서로 다른 lobbyId를 사용했다.
+  - 따라서 노트북의 정지 화면은 실제 소유권 이슈 재현이 아니라 join 실패 false-negative였다.
+- 새 운영 방식:
+  - 데스크탑 `RunHost.bat`
+  - 노트북 `RunClient.bat`
+  - 수동 `lobbyId` 입력은 기본 경로가 아니다.
+
 ### 2026-03-08 18:47 (KST)
 
 > [!success] Play Mode startup cleanup done

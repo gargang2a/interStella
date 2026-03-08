@@ -16,6 +16,7 @@ namespace InterStella.EditorTools
         private const string DEFAULT_OUTPUT_PATH = "Builds/SteamSmokeWindows64/interStella-Smoke.exe";
         private const string STEAM_APP_ID_FILE = "steam_appid.txt";
         private const string BUILD_INFO_FILE = "build-info.txt";
+        private const string CURRENT_LOBBY_FILE = "current-steam-lobby.txt";
         private const string HOST_LAUNCHER_FILE = "RunHost.bat";
         private const string CLIENT_LAUNCHER_FILE = "RunClient.bat";
         private static readonly string[] BUILD_SCENES =
@@ -147,6 +148,7 @@ namespace InterStella.EditorTools
                 "setlocal",
                 "set \"EXE=%~dp0" + executableFileName + "\"",
                 "set \"LOG=%~dp0steam-build-host.log\"",
+                "set \"LOBBY_FILE=%~dp0" + CURRENT_LOBBY_FILE + "\"",
                 "if not exist \"%EXE%\" (",
                 "  echo Build executable not found: \"%EXE%\"",
                 "  pause",
@@ -155,7 +157,8 @@ namespace InterStella.EditorTools
                 "start \"interStella Host\" \"%EXE%\" -interstella-provider steam -interstella-steam-strict-relay 1 -interstella-mode host -interstella-address 127.0.0.1 -interstella-port 7770 -logFile \"%LOG%\"",
                 "echo Host launched.",
                 "echo Log: \"%LOG%\"",
-                "echo After the lobby is created, send the lobbyId to the client user.",
+                "echo Shared lobby file: \"%LOBBY_FILE%\"",
+                "echo After the lobby is created, the latest lobbyId will be written to the shared lobby file.",
                 "pause"
             }) + newLine;
         }
@@ -169,8 +172,17 @@ namespace InterStella.EditorTools
                 "setlocal",
                 "set \"EXE=%~dp0" + executableFileName + "\"",
                 "set \"LOG=%~dp0steam-build-client.log\"",
+                "set \"LOBBY_FILE=%~dp0" + CURRENT_LOBBY_FILE + "\"",
                 "set \"LOBBY_ID=%~1\"",
                 "if \"%LOBBY_ID%\"==\"\" (",
+                "  if exist \"%LOBBY_FILE%\" (",
+                "    for /f \"usebackq tokens=1,* delims==\" %%A in (\"%LOBBY_FILE%\") do (",
+                "      if /I \"%%A\"==\"lobby_id\" set \"LOBBY_ID=%%B\"",
+                "    )",
+                "  )",
+                ")",
+                "if \"%LOBBY_ID%\"==\"\" (",
+                "  echo Shared lobby file was not found or does not contain lobby_id.",
                 "  set /p LOBBY_ID=Enter lobbyId: ",
                 ")",
                 "if \"%LOBBY_ID%\"==\"\" (",
@@ -185,6 +197,7 @@ namespace InterStella.EditorTools
                 ")",
                 "start \"interStella Client\" \"%EXE%\" -interstella-provider steam -interstella-steam-strict-relay 1 -interstella-mode client -interstella-address 127.0.0.1 -interstella-port 7770 +connect_lobby %LOBBY_ID% -logFile \"%LOG%\"",
                 "echo Client launched with lobbyId %LOBBY_ID%.",
+                "echo Shared lobby file: \"%LOBBY_FILE%\"",
                 "echo Log: \"%LOG%\"",
                 "pause"
             }) + newLine;

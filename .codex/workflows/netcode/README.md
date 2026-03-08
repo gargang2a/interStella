@@ -156,8 +156,8 @@ Steam build smoke helpers:
 - Recommended build smoke flow:
   1. Build once from the Unity menu in the main project.
   2. Launch the built host executable and wait for Steam lobby creation.
-  3. Capture the lobby id from the host log or snapshot tooling.
-  4. Launch the built client executable with +connect_lobby.
+  3. Confirm `current-steam-lobby.txt` appears in the build folder and contains the latest `lobby_id`.
+  4. Launch the built client executable. `RunClient.bat` will use the shared lobby file automatically when no lobby id argument is provided.
 - Recommended dual-machine flow for one developer using desktop + laptop:
   1. Desktop: commit + push current branch.
   2. Laptop:
@@ -171,5 +171,6 @@ Steam build smoke helpers:
 - Recommended desktop build -> OneDrive publish -> laptop run flow:
   1. Desktop: build from Unity menu.
   2. Desktop: run `.codex\workflows\netcode\publish-steam-smoke-build.bat`
-  3. Laptop: open OneDrive path `OneDrive\interStellaBuilds\SteamSmokeWindows64`
-  4. Laptop: run `RunClient.bat <lobbyId>`
+  3. Desktop: run `RunHost.bat` from the OneDrive build folder and wait for `current-steam-lobby.txt` to refresh.
+  4. Laptop: open OneDrive path `OneDrive\interStellaBuilds\SteamSmokeWindows64`
+  5. Laptop: run `RunClient.bat`

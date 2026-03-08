@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEngine;
 
 namespace InterStella.Game.Netcode.Runtime
@@ -78,6 +79,16 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField]
         private string _strictRelayArgument = "interstella-steam-strict-relay";
 
+        [Header("Build Smoke Lobby Share")]
+        [SerializeField]
+        private bool _writeSharedLobbyInfoFile = true;
+
+        [SerializeField]
+        private string _sharedLobbyInfoFileName = "current-steam-lobby.txt";
+
+        [SerializeField]
+        private string _sharedLobbyInfoFileArgument = "interstella-shared-lobby-file";
+
         [SerializeField]
         private LifecycleState _lifecycleState = LifecycleState.Idle;
 
@@ -119,6 +130,8 @@ namespace InterStella.Game.Netcode.Runtime
                 return StartUnderlyingDirectSession();
             }
 
+            PrepareSharedLobbyInfoFileForHostSession();
+
             if (!PrepareLobbyBootstrap())
             {
                 _lifecycleState = LifecycleState.Failed;
@@ -130,6 +143,7 @@ namespace InterStella.Game.Netcode.Runtime
             _lifecycleState = started ? LifecycleState.SessionActive : LifecycleState.Failed;
             if (started)
             {
+                WriteSharedLobbyInfoFile("session_active");
                 Debug.Log($"[SteamSessionService] Session started. lobbyId={_activeLobbyId}, hostSteamId={_activeHostSteamId}, networkHost={_networkSession.IsHost}.");
                 TrySendAutoInviteIfConfigured();
             }
@@ -144,6 +158,7 @@ namespace InterStella.Game.Netcode.Runtime
         public void StopSession()
         {
             _networkSession?.StopSession();
+            ClearSharedLobbyInfoFile();
             LeaveActiveLobby();
             RefreshLifecycleFromState();
             Debug.Log("[SteamSessionService] Session stopped and active lobby was cleared.");
@@ -254,6 +269,7 @@ namespace InterStella.Game.Netcode.Runtime
                 _activeLobbyId = Normalize(lobbyId);
                 _activeHostSteamId = Normalize(hostSteamId);
                 _lifecycleState = LifecycleState.LobbyReady;
+                WriteSharedLobbyInfoFile("lobby_ready");
                 Debug.Log($"[SteamSessionService] Host Steam lobby created. lobbyId={_activeLobbyId}, hostSteamId={_activeHostSteamId}. {details}");
                 return true;
             }
@@ -517,6 +533,115 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 Debug.LogWarning("[SteamSessionService] Auto invite failed. " + details);
             }
+        }
+
+        private void PrepareSharedLobbyInfoFileForHostSession()
+        {
+            if (!CanAccessSharedLobbyInfoFileForHostSession())
+            {
+                return;
+            }
+
+            string filePath = ResolveSharedLobbyInfoFilePath();
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            {
+                return;
+            }
+
+            try
+            {
+                File.Delete(filePath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[SteamSessionService] Failed to clear previous shared lobby info file. " + exception.Message);
+            }
+        }
+
+        private void WriteSharedLobbyInfoFile(string phase)
+        {
+            if (!CanAccessSharedLobbyInfoFileForHostSession() || string.IsNullOrWhiteSpace(_activeLobbyId))
+            {
+                return;
+            }
+
+            string filePath = ResolveSharedLobbyInfoFilePath();
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            try
+            {
+                string directoryPath = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrWhiteSpace(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+
+                string[] lines =
+                {
+                    "lobby_id=" + _activeLobbyId,
+                    "host_steam_id=" + _activeHostSteamId,
+                    "phase=" + phase,
+                    "updated_utc=" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+                };
+
+                File.WriteAllLines(filePath, lines);
+                Debug.Log($"[SteamSessionService] Shared lobby info file updated. path={filePath}, lobbyId={_activeLobbyId}, phase={phase}.");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[SteamSessionService] Failed to write shared lobby info file. " + exception.Message);
+            }
+        }
+
+        private void ClearSharedLobbyInfoFile()
+        {
+            if (!CanAccessSharedLobbyInfoFileForHostSession())
+            {
+                return;
+            }
+
+            string filePath = ResolveSharedLobbyInfoFilePath();
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            {
+                return;
+            }
+
+            try
+            {
+                File.Delete(filePath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[SteamSessionService] Failed to clear shared lobby info file. " + exception.Message);
+            }
+        }
+
+        private bool CanAccessSharedLobbyInfoFileForHostSession()
+        {
+            return _writeSharedLobbyInfoFile
+                && !Application.isEditor
+                && IsHost
+                && IsSteamProviderConfigured();
+        }
+
+        private string ResolveSharedLobbyInfoFilePath()
+        {
+            string overridePath = ReadRuntimeOverride(_sharedLobbyInfoFileArgument, "INTERSTELLA_SHARED_LOBBY_FILE_PATH");
+            if (!string.IsNullOrWhiteSpace(overridePath))
+            {
+                return overridePath.Trim();
+            }
+
+            string baseDirectoryPath = Path.GetDirectoryName(Application.dataPath);
+            if (string.IsNullOrWhiteSpace(baseDirectoryPath) || string.IsNullOrWhiteSpace(_sharedLobbyInfoFileName))
+            {
+                return string.Empty;
+            }
+
+            return Path.Combine(baseDirectoryPath, _sharedLobbyInfoFileName);
         }
 
         private string ResolvePreferredLocalHostId()

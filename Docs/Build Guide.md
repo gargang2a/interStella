@@ -1483,3 +1483,20 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-bui
   2. 데스크탑에서 `publish-steam-smoke-build.bat` 실행
   3. 노트북에서 OneDrive 동기화 폴더 열기
   4. `RunClient.bat <lobbyId>` 실행
+
+### 2026-03-09 06:15 (KST) Shared Lobby File Update
+- 2기기 build smoke에서 수동 `lobbyId` 전달은 stale 값 입력 실수를 만들기 쉬웠다.
+- 그래서 host build는 현재 세션의 최신 lobby 정보를 build 폴더의 `current-steam-lobby.txt`에 기록하도록 변경했다.
+- client build는 `RunClient.bat` 실행 시:
+  - 첫 인자가 있으면 그 값을 우선 사용
+  - 없으면 `current-steam-lobby.txt`에서 `lobby_id`를 자동으로 읽음
+  - 둘 다 없을 때만 수동 입력 prompt를 띄움
+- 현재 운영 순서:
+  1. 데스크탑 Unity 메뉴 빌드
+  2. 데스크탑에서 `publish-steam-smoke-build.bat`
+  3. 데스크탑 OneDrive build 폴더에서 `RunHost.bat`
+  4. host가 lobby를 만들면 `current-steam-lobby.txt`가 갱신됨
+  5. 노트북 OneDrive build 폴더에서 `RunClient.bat`
+- 이번 변경의 목적:
+  - `lobbyId` 수동 전달 제거
+  - 잘못된 오래된 lobbyId로 client가 정지 상태처럼 보이는 false-negative 감소
