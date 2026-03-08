@@ -69,6 +69,11 @@
 > [!success] Clone path auto-detect fixed
 > 노트북 clone 경로가 `C:\Unity\interStella`가 아니어도 workflow script가 현재 저장소 위치를 기준으로 동작하도록 수정했다.
 
+### 2026-03-09 05:08 (KST)
+
+> [!success] OneDrive publish workflow added
+> 데스크탑 build를 OneDrive 공유 폴더로 복사하고, 노트북은 그 폴더에서 바로 `RunClient.bat`를 실행하는 경로를 추가했다.
+
 ### 2026-03-08 18:47 (KST)
 
 > [!success] Play Mode startup cleanup done

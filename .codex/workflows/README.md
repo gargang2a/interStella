@@ -23,6 +23,8 @@ See: `.codex/workflows/client/README.md`
 - `.codex/workflows/netcode/run-interaction-regression.ps1`
 - `.codex/workflows/netcode/build-steam-smoke.ps1`
 - `.codex/workflows/netcode/launch-steam-build-smoke.ps1`
+- `.codex/workflows/netcode/publish-steam-smoke-build.ps1`
+- `.codex/workflows/netcode/publish-steam-smoke-build.bat`
 - `.codex/workflows/netcode/sync-and-build-steam-smoke.ps1`
 - `.codex/workflows/netcode/sync-and-build-steam-smoke.bat`
 

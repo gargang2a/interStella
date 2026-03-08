@@ -1469,3 +1469,17 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-bui
 - 추가 동작:
   - `Logs` 폴더가 없으면 자동 생성
   - headless batch build가 불가능하면 `BUILD_REQUIRES_UNITY_MENU`를 출력하고 Unity 메뉴 빌드로 넘어가도록 안내
+
+### 2026-03-09 05:08 (KST) OneDrive Publish Workflow Update
+- 데스크탑에서 OneDrive 경로 확인:
+  - `C:\Users\gar\OneDrive`
+- 신규 스크립트:
+  - `.codex/workflows/netcode/publish-steam-smoke-build.ps1`
+  - `.codex/workflows/netcode/publish-steam-smoke-build.bat`
+- 역할:
+  - 로컬 `Builds/SteamSmokeWindows64`를 OneDrive의 `interStellaBuilds/SteamSmokeWindows64`로 복사
+- 권장 순서:
+  1. 데스크탑 Unity 메뉴 빌드
+  2. 데스크탑에서 `publish-steam-smoke-build.bat` 실행
+  3. 노트북에서 OneDrive 동기화 폴더 열기
+  4. `RunClient.bat <lobbyId>` 실행

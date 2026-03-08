@@ -1249,3 +1249,15 @@
     - 현재 clone 위치 기준으로 project/build/log 경로 계산
     - `Logs` 폴더 자동 생성
     - headless build가 불가능한 경우 Unity 메뉴 빌드 안내 메시지 출력
+
+### 2026-03-09 05:08 (KST) 진행 스냅샷
+- [x] OneDrive publish workflow 추가
+  - 신규 파일:
+    - .codex/workflows/netcode/publish-steam-smoke-build.ps1
+    - .codex/workflows/netcode/publish-steam-smoke-build.bat
+  - 기능:
+    - 로컬 build를 OneDrive 공유 폴더로 복사
+    - 기본 publish 경로: `OneDrive\\interStellaBuilds\\SteamSmokeWindows64`
+- [ ] 다음 단계
+  - 데스크탑에서 최신 build를 OneDrive로 publish
+  - 노트북에서 OneDrive 폴더 기준 RunClient smoke 실행

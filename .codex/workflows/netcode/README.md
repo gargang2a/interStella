@@ -142,6 +142,9 @@ Steam build smoke helpers:
   - Tools/InterStella/Build/Build Steam Smoke Windows64
 - Batch build wrapper (requires the project to be closed and Unity Hub licensing args):
   - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\build-steam-smoke.ps1
+- OneDrive/shared folder publish helper:
+  - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\publish-steam-smoke-build.ps1
+  - or double-click `.codex\workflows\netcode\publish-steam-smoke-build.bat`
 - Current branch sync + batch build wrapper for desktop/laptop use:
   - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-build-steam-smoke.ps1
   - or double-click `.codex\workflows\netcode\sync-and-build-steam-smoke.bat`
@@ -164,3 +167,9 @@ Steam build smoke helpers:
   4. Run:
      - `Builds/SteamSmokeWindows64/RunHost.bat`
      - `Builds/SteamSmokeWindows64/RunClient.bat <lobbyId>`
+
+- Recommended desktop build -> OneDrive publish -> laptop run flow:
+  1. Desktop: build from Unity menu.
+  2. Desktop: run `.codex\workflows\netcode\publish-steam-smoke-build.bat`
+  3. Laptop: open OneDrive path `OneDrive\interStellaBuilds\SteamSmokeWindows64`
+  4. Laptop: run `RunClient.bat <lobbyId>`
