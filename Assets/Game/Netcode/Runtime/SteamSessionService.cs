@@ -18,6 +18,9 @@ namespace InterStella.Game.Netcode.Runtime
         private MonoBehaviour _networkSessionBehaviour;
 
         [SerializeField]
+        private SteamworksBootstrap _steamworksBootstrap;
+
+        [SerializeField]
         private bool _autoCreateLobbyForHost = true;
 
         [SerializeField]
@@ -57,6 +60,9 @@ namespace InterStella.Game.Netcode.Runtime
         private string _selfSteamIdArgument = "interstella-steam-self-id";
 
         [SerializeField]
+        private string _providerArgument = "interstella-provider";
+
+        [SerializeField]
         private string _strictRelayArgument = "interstella-steam-strict-relay";
 
         [SerializeField]
@@ -73,6 +79,7 @@ namespace InterStella.Game.Netcode.Runtime
         private void Awake()
         {
             ResolveNetworkSession();
+            ResolveSteamworksBootstrapIfMissing();
             ApplyRuntimeOverrides();
             RefreshLifecycleFromState();
         }
@@ -157,7 +164,7 @@ namespace InterStella.Game.Netcode.Runtime
 
             if (string.IsNullOrWhiteSpace(_activeHostSteamId))
             {
-                _activeHostSteamId = Normalize(_localSteamUserId);
+                _activeHostSteamId = ResolvePreferredLocalHostId();
                 if (string.IsNullOrWhiteSpace(_activeHostSteamId))
                 {
                     _activeHostSteamId = "editor-host";
@@ -179,6 +186,7 @@ namespace InterStella.Game.Netcode.Runtime
         private void OnValidate()
         {
             ResolveNetworkSession();
+            ResolveSteamworksBootstrapIfMissing();
             RefreshLifecycleFromState();
         }
 #endif
@@ -261,6 +269,14 @@ namespace InterStella.Game.Netcode.Runtime
             _networkSession = _networkSessionBehaviour as ISessionService;
         }
 
+        private void ResolveSteamworksBootstrapIfMissing()
+        {
+            if (_steamworksBootstrap == null)
+            {
+                _steamworksBootstrap = GetComponent<SteamworksBootstrap>();
+            }
+        }
+
         private void ApplyRuntimeOverrides()
         {
             if (!_allowRuntimeOverride)
@@ -285,6 +301,46 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 _allowDirectFallbackIfRelayUnavailable = false;
             }
+        }
+
+        private string ResolvePreferredLocalHostId()
+        {
+            if (IsSteamProviderConfigured() && _steamworksBootstrap != null && _steamworksBootstrap.TryInitialize())
+            {
+                if (_steamworksBootstrap.TryGetLocalSteamIdString(out string bootstrapSteamId))
+                {
+                    return bootstrapSteamId;
+                }
+            }
+
+            return Normalize(_localSteamUserId);
+        }
+
+        private bool IsSteamProviderConfigured()
+        {
+            string runtimeProvider = ReadRuntimeOverride(_providerArgument, "INTERSTELLA_PROVIDER");
+            if (!string.IsNullOrWhiteSpace(runtimeProvider))
+            {
+                switch (runtimeProvider.Trim().ToLowerInvariant())
+                {
+                    case "steam":
+                    case "steamrelay":
+                    case "steam-relay":
+                    case "relay":
+                        return true;
+                    case "direct":
+                    case "ip":
+                    case "socket":
+                        return false;
+                }
+            }
+
+            if (_networkSessionBehaviour is FishNetSessionService fishNetSession)
+            {
+                return fishNetSession.ConfiguredForSteamRelay;
+            }
+
+            return false;
         }
 
         private void RefreshLifecycleFromState()

@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using InterStella.Game.Netcode.Runtime;
 using NUnit.Framework;
@@ -31,7 +32,7 @@ namespace InterStella.Game.Netcode.Editor.Tests
             }
             finally
             {
-                Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(root);
             }
         }
 
@@ -56,7 +57,7 @@ namespace InterStella.Game.Netcode.Editor.Tests
             }
             finally
             {
-                Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(root);
             }
         }
 
@@ -84,7 +85,43 @@ namespace InterStella.Game.Netcode.Editor.Tests
             }
             finally
             {
-                Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void StartSession_HostSteamProvider_UsesBootstrapSteamId()
+        {
+            const string steamId = "76561198000000000";
+            string previousProvider = Environment.GetEnvironmentVariable("INTERSTELLA_PROVIDER");
+            GameObject root = new GameObject("SteamSessionServiceTests_HostSteamBootstrap");
+            try
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", "steam");
+
+                FakeNetworkSessionService fakeSession = root.AddComponent<FakeNetworkSessionService>();
+                fakeSession.Configure(isHost: true, startResult: true);
+
+                SteamworksBootstrap bootstrap = root.AddComponent<SteamworksBootstrap>();
+                SetPrivateField(bootstrap, "_initializeOnAwake", false);
+                SetPrivateField(bootstrap, "_isInitialized", true);
+                SetPrivateField(bootstrap, "_localSteamId", ulong.Parse(steamId));
+
+                SteamSessionService steamSession = root.AddComponent<SteamSessionService>();
+                SetPrivateField(steamSession, "_networkSessionBehaviour", fakeSession);
+                SetPrivateField(steamSession, "_steamworksBootstrap", bootstrap);
+                SetPrivateField(steamSession, "_allowRuntimeOverride", false);
+
+                bool started = steamSession.StartSession();
+
+                Assert.That(started, Is.True);
+                Assert.That(fakeSession.StartCallCount, Is.EqualTo(1));
+                Assert.That(steamSession.ActiveHostSteamId, Is.EqualTo(steamId));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", previousProvider);
+                UnityEngine.Object.DestroyImmediate(root);
             }
         }
 

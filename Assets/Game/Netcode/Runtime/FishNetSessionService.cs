@@ -98,6 +98,7 @@ namespace InterStella.Game.Netcode.Runtime
         }
 
         public bool IsHost => _startupMode == StartupMode.Host || _startupMode == StartupMode.ServerOnly;
+        public bool ConfiguredForSteamRelay => _connectionProvider == ConnectionProvider.SteamRelay;
         public string ActiveConnectionProvider => _connectionProvider.ToString();
         public string ActiveSteamLobbyId => _steamLobbyId;
         public string ActiveSteamHostId => _steamHostId;

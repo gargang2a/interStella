@@ -25,6 +25,20 @@
       },
       "hash": "32528cbc96cbb24be79a6732215a554d5acb7a41"
     },
+    "com.firstgeargames.fishysteamworks": {
+      "version": "https://github.com/FirstGearGames/FishySteamworks.git#4.1.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "21e858249249e2c322365fe9fefbe865f290b0d9"
+    },
+    "com.rlabrecque.steamworks.net": {
+      "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2025.162.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "af710043b9097e8ffedf74d67503c3a7eb498260"
+    },
     "com.unity.collab-proxy": {
       "version": "2.11.2",
       "depth": 0,

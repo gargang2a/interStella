@@ -329,6 +329,12 @@ GameObject:
   - component: {fileID: 284635963}
   - component: {fileID: 284635964}
   - component: {fileID: 284635965}
+  - component: {fileID: 284635971}
+  - component: {fileID: 284635970}
+  - component: {fileID: 284635969}
+  - component: {fileID: 284635968}
+  - component: {fileID: 284635967}
+  - component: {fileID: 284635966}
   m_Layer: 0
   m_Name: MatchSystems
   m_TagString: Untagged
@@ -431,7 +437,7 @@ MonoBehaviour:
   _steamLobbyId: 
   _steamHostId: 
   _allowSteamFallbackToDirect: 0
-  _steamRelayTransportBinderBehaviour: {fileID: 0}
+  _steamRelayTransportBinderBehaviour: {fileID: 284635971}
   _allowRuntimeOverride: 1
   _modeArgument: interstella-mode
   _addressArgument: interstella-address
@@ -479,6 +485,12 @@ MonoBehaviour:
   - {fileID: 531697750}
   _despawnOnDisconnect: 0
   _logSlotEvents: 1
+  _seedRemoteSlotForInteractionRegression: 1
+  _regressionSeedSlotIndex: 1
+  _regressionSeedScrapName: Scrap_03
+  _regressionSeedRepairStationName: RepairStation
+  _regressionSeedStationDistance: 1.8
+  _logRegressionSeedEvents: 1
 --- !u!114 &284635964
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -492,6 +504,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkSessionBehaviour: {fileID: 284635961}
+  _steamworksBootstrap: {fileID: 284635970}
   _autoCreateLobbyForHost: 1
   _autoAcceptInviteForClient: 1
   _allowDirectFallbackIfRelayUnavailable: 1
@@ -504,6 +517,8 @@ MonoBehaviour:
   _inviteLobbyIdArgument: interstella-invite-lobby-id
   _inviteHostIdArgument: interstella-invite-host-id
   _selfSteamIdArgument: interstella-steam-self-id
+  _providerArgument: interstella-provider
+  _strictRelayArgument: interstella-steam-strict-relay
   _lifecycleState: 0
 --- !u!114 &284635965
 MonoBehaviour:
@@ -520,6 +535,125 @@ MonoBehaviour:
   _allowHostIdEndpointOverride: 1
   _fallbackAddress: 127.0.0.1
   _fallbackPort: 7770
+--- !u!114 &284635966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28b19962fe839804180bd02ce1a545f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _serverBindAddress: 
+  _port: 7770
+  _maximumClients: 9001
+  _peerToPeer: 1
+  _clientAddress: 
+--- !u!114 &284635967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 314b449d3505bd24487ba69b61c2fda5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalServerActions: 1
+  _transports:
+  - {fileID: 284635968}
+  - {fileID: 284635966}
+--- !u!114 &284635968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f48f002b825cbd45a19bd96d90f9edb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stopSocketsOnThread: 0
+  _dontRoute: 0
+  _reuseAddress: 0
+  _unreliableMtu: 1023
+  _ipv4BindAddress: 
+  _enableIpv6: 1
+  _ipv6BindAddress: 
+  _port: 7770
+  _maximumClients: 4095
+  _clientAddress: localhost
+--- !u!114 &284635969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34e4a322dca349547989b14021da4e23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Transport: {fileID: 284635968}
+  _intermediateLayer: {fileID: 0}
+  _latencySimulator:
+    _enabled: 0
+    _simulateHost: 1
+    _latency: 0
+    _outOfOrder: 0
+    _packetLoss: 0
+--- !u!114 &284635970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bd8f2dd55e65874fb62dddd5677063e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _appId: 480
+  _initializeOnAwake: 1
+  _restartAppIfNecessary: 0
+  _runCallbacksInUpdate: 1
+  _persistAcrossScenes: 0
+  _logInitializationEvents: 1
+  _logCallbackExceptions: 0
+  _isInitialized: 0
+  _localSteamId: 0
+  _lastInitError: 
+--- !u!114 &284635971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284635955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b099b8c79b0177240b01efa90c315eaa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _allowLoopbackFallbackUntilSdkReady: 1
+  _applyStartupSelectionOnAwake: 1
+  _loopbackFallback: {fileID: 284635965}
+  _steamworksBootstrap: {fileID: 284635970}
+  _fishNetSessionService: {fileID: 284635961}
+  _transportManager: {fileID: 284635969}
+  _tugboatTransport: {fileID: 284635968}
+  _multipassTransport: {fileID: 284635967}
+  _fishySteamworksTransport: {fileID: 284635966}
+  _logBootstrapEvents: 1
 --- !u!1 &289819984
 GameObject:
   m_ObjectHideFlags: 0
@@ -661,6 +795,7 @@ MonoBehaviour:
   _repairObjective: {fileID: 289819985}
   _syncInterval: 0.1
   _logTransientDeliveryEvents: 0
+  _emitRegressionMarkers: 1
 --- !u!114 &289819991
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1443,6 +1578,7 @@ MonoBehaviour:
   _minimumDeltaToSync: 0.02
   _maxAcceptedDeltaPerSecond: 0
   _serverDeltaTolerance: 0.05
+  _emitRegressionMarkers: 1
 --- !u!114 &531697752
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3224,6 +3360,7 @@ MonoBehaviour:
   _tetherLink: {fileID: 2053560163}
   _syncInterval: 0.05
   _distanceDeltaThreshold: 0.02
+  _emitRegressionMarkers: 1
 --- !u!114 &2053560168
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3790,6 +3927,7 @@ MonoBehaviour:
   _minimumDeltaToSync: 0.02
   _maxAcceptedDeltaPerSecond: 0
   _serverDeltaTolerance: 0.05
+  _emitRegressionMarkers: 1
 --- !u!114 &2137637293
 MonoBehaviour:
   m_ObjectHideFlags: 0

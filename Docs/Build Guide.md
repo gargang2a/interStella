@@ -1179,3 +1179,80 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\run-e2e-sync
   -StartupRetryMaxAttempts 3 `
   -StartupRetryDelaySec 10
 ```
+
+### 2026-03-08 15:52 (KST)
+## Steam Transport Setup Guide (FishySteamworks 1차)
+대상 파일:
+- `Packages/manifest.json`
+- `Assets/Game/Netcode/Runtime/SteamworksBootstrap.cs`
+- `Assets/Game/Netcode/Runtime/SteamRelaySdkTransportBinder.cs`
+- `Assets/Game/Netcode/Editor/SteamTransportSetupMenu.cs`
+- `.codex/workflows/client/sync-interstella-client.ps1`
+
+사전 조건:
+- `steam_appid.txt` 존재 (`480`, 개발용 기본값)
+- `Packages/manifest.json`에 Steamworks.NET / FishySteamworks 의존성 반영
+
+초기 배치 절차(한 번 실행):
+1. 메뉴 실행:
+   - `Tools/InterStella/Netcode/Import FishySteamworks Package`
+2. 메뉴 실행:
+   - `Tools/InterStella/Netcode/Setup Steam Transport Components`
+3. 씬 저장:
+   - `Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity`
+
+셋업 결과(현재 기준):
+- `MatchSystems`에 다음 컴포넌트가 배치된다.
+  - `SteamRelaySdkTransportBinder`
+  - `SteamworksBootstrap`
+  - `TransportManager`
+  - `Tugboat`
+  - `Multipass`
+  - `FishySteamworks.FishySteamworks`
+- `TransportManager.Transport` 기본값은 `Tugboat`
+- `Multipass.Transports`는 `[Tugboat, FishySteamworks]`
+- `FishySteamworks._peerToPeer=true`
+
+런타임 provider 선택 규칙:
+- direct:
+  - 기본값
+  - 또는 `FishNetSessionService._connectionProvider=Direct`
+  - 또는 CLI/ENV `-interstella-provider direct`
+- steam:
+  - Play 진입 전에 `FishNetSessionService._connectionProvider=SteamRelay`
+  - 또는 클라이언트 실행 인자 `-interstella-provider steam`
+
+중요 제한:
+- provider 선택은 `NetworkManager` 초기화 전에 끝나야 한다.
+- 현재는 `direct <-> steam` 런타임 전환을 지원하지 않는다.
+
+Steam smoke 실행 예시:
+- Host:
+  - Play 진입 전 `FishNetSessionService` provider를 `SteamRelay`로 설정
+  - Steamworks 초기화 성공 시 `SteamSessionService`가 host lobby host id를 실제 local SteamID로 기록
+- Client:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interstella-client.ps1
+```
+  - 이후 clone editor 실행 시 예시 인자:
+    - `-interstella-provider steam`
+    - `-interstella-invite-lobby-id <lobbyId>`
+    - `-interstella-invite-host-id <steamId>`
+
+현재 fallback 정책:
+- client만 loopback fallback 허용
+  - 조건: `_allowLoopbackFallbackUntilSdkReady=true` and `hostId=address:port`
+- host는 Steam startup selection 이후 loopback fallback 미지원
+  - direct host가 필요하면 provider를 direct로 시작해야 한다.
+
+클라이언트 미러 동기화 범위(업데이트):
+- `Assets/Game`
+- `Assets/FishNet`
+- `Packages/manifest.json`
+- `Packages/packages-lock.json`
+- `steam_appid.txt`
+
+최신 검증 결과:
+- EditMode tests: total=12, passed=12, failed=0
+- 신규 검증:
+  - `SteamSessionServiceTests.StartSession_HostSteamProvider_UsesBootstrapSteamId`

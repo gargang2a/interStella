@@ -6,13 +6,16 @@ param(
     [string[]]$Include = @(
         "Assets/Game",
         "Assets/Game.meta",
+        "Assets/FishNet",
+        "Assets/FishNet.meta",
         "Packages/manifest.json",
         "Packages/packages-lock.json",
         "ProjectSettings/ProjectSettings.asset",
         "ProjectSettings/EditorBuildSettings.asset",
         "ProjectSettings/TagManager.asset",
         "ProjectSettings/InputManager.asset",
-        "ProjectSettings/DynamicsManager.asset"
+        "ProjectSettings/DynamicsManager.asset",
+        "steam_appid.txt"
     )
 )
 

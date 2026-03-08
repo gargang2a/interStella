@@ -38,6 +38,8 @@
     "com.unity.modules.wind": "1.0.0",
     "com.coplaydev.unity-mcp": "file:com.coplaydev.unity-mcp",
     "com.firstgeargames.fishnet": "https://github.com/FirstGearGames/FishNet.git?path=Assets/FishNet",
+    "com.firstgeargames.fishysteamworks": "https://github.com/FirstGearGames/FishySteamworks.git#4.1.1",
+    "com.rlabrecque.steamworks.net": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2025.162.1",
     "com.unity.modules.xr": "1.0.0"
   }
 }

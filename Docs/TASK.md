@@ -940,3 +940,36 @@
 - [ ] 다음 단계
   - strict 회귀 summary의 startup 재시도 통계를 누적해 기본값(`2/8`) 튜닝
   - `SteamRelaySdkTransportBinder` 실제 Steam transport API 바인딩 구현 착수
+
+### 2026-03-08 15:52 (KST) 진행 스냅샷
+- [x] Steamworks SDK/transport 패키지 반영
+  - `Packages/manifest.json`, `Packages/packages-lock.json`
+  - `Assets/FishNet/Plugins/FishySteamworks/*`
+  - `steam_appid.txt` (`480`, 개발용 기본값)
+- [x] Steam transport 실연동 1차 반영
+  - 신규: `Assets/Game/Netcode/Runtime/SteamworksBootstrap.cs`
+  - 보강: `Assets/Game/Netcode/Runtime/SteamRelaySdkTransportBinder.cs`
+    - startup transport selection 추가
+    - `FishySteamworks` 실제 바인딩 추가
+    - client loopback fallback 유지
+  - 보강: `Assets/Game/Netcode/Runtime/SteamSessionService.cs`
+    - Steam provider일 때 host lobby host id를 실제 local SteamID 우선 사용
+- [x] editor 배치 자동화/씬 반영
+  - 신규 메뉴: `Tools/InterStella/Netcode/Setup Steam Transport Components`
+  - 신규 파일: `Assets/Game/Netcode/Editor/SteamTransportSetupMenu.cs`
+  - 씬 저장: `Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity`
+- [x] 클라이언트 미러 동기화 범위 확장
+  - 파일: `.codex/workflows/client/sync-interstella-client.ps1`
+  - 추가 동기화 대상:
+    - `Assets/FishNet`
+    - `steam_appid.txt`
+- [x] 검증
+  - EditMode tests: total=12, passed=12, failed=0
+  - 신규 테스트:
+    - `SteamSessionServiceTests.StartSession_HostSteamProvider_UsesBootstrapSteamId`
+- [ ] 다음 단계
+  - 실제 Steam 계정 2프로세스에서 `provider=steam` 호스트/클라이언트 접속 스모크 검증
+  - synthetic lobby id를 실제 Steam lobby/invite API로 승격
+- [ ] 명시적 제한
+  - `direct <-> steam` transport 전환은 Play 진입 전 provider 선택 기준이며,
+    `NetworkManager` 초기화 이후 런타임 전환은 현재 미지원
