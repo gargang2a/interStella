@@ -1,3 +1,4 @@
+using FishNet;
 using InterStella.Game.Shared.State;
 using UnityEngine;
 
@@ -31,6 +32,11 @@ namespace InterStella.Game.Features.Tether
             }
 
             if (endpointA.Body == null || endpointB.Body == null)
+            {
+                return;
+            }
+
+            if (!ShouldRunAuthoritativeSolver())
             {
                 return;
             }
@@ -70,6 +76,16 @@ namespace InterStella.Game.Features.Tether
 
             endpointA.Body.AddForce(correction, ForceMode.VelocityChange);
             endpointB.Body.AddForce(-correction, ForceMode.VelocityChange);
+        }
+
+        private static bool ShouldRunAuthoritativeSolver()
+        {
+            if (InstanceFinder.IsOffline)
+            {
+                return true;
+            }
+
+            return InstanceFinder.IsServerStarted;
         }
     }
 }

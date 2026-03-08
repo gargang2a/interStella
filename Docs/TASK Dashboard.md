@@ -87,6 +87,21 @@
   - 노트북 `RunClient.bat`
   - 수동 `lobbyId` 입력은 기본 경로가 아니다.
 
+### 2026-03-09 06:32 (KST)
+
+> [!warning] Movement sync is now the active blocker
+> 최신 build에서 세션 진입, ownership, camera retarget은 통과했다. 현재 문제는 player 위치/속도 동기화 품질이다.
+
+- 확인된 사실:
+  - client는 `PlayerB` local owner
+  - camera retarget 정상
+  - 같은 세션 진입 정상
+- 1차 수정:
+  - `TetherConstraintSolver`의 물리 correction을 server/offline에서만 적용
+  - client는 replicated tether state로 constraint flag만 반영
+- 의미:
+  - 이제 다음 smoke에서 남는 위치 오차는 `이중 테더 물리`보다 `player motion sync 구조` 자체를 더 직접적으로 가리키게 된다.
+
 ### 2026-03-08 18:47 (KST)
 
 > [!success] Play Mode startup cleanup done

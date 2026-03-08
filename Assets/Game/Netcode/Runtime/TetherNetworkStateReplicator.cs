@@ -155,12 +155,14 @@ namespace InterStella.Game.Netcode.Runtime
             if (isBroken)
             {
                 _tetherLink.MarkBroken(distance);
+                ApplyConstraintFlags(false);
                 CacheAppliedState(distance, levelByte, true);
                 TryLogClientApplyMarker(distance, level, true);
                 return;
             }
 
             _tetherLink.SetRuntimeState(distance, level);
+            ApplyConstraintFlags(level == TetherTensionLevel.Tension || level == TetherTensionLevel.HardLimit);
             CacheAppliedState(distance, levelByte, false);
             TryLogClientApplyMarker(distance, level, false);
         }
@@ -256,6 +258,24 @@ namespace InterStella.Game.Netcode.Runtime
             if (_tetherLink == null)
             {
                 _tetherLink = GetComponent<TetherLink>();
+            }
+        }
+
+        private void ApplyConstraintFlags(bool isConstrained)
+        {
+            if (_tetherLink == null || !_tetherLink.TryGetEndpoints(out TetherEndpoint endpointA, out TetherEndpoint endpointB))
+            {
+                return;
+            }
+
+            if (endpointA.PlayerMotor != null)
+            {
+                endpointA.PlayerMotor.SetTetherConstrained(isConstrained);
+            }
+
+            if (endpointB.PlayerMotor != null)
+            {
+                endpointB.PlayerMotor.SetTetherConstrained(isConstrained);
             }
         }
     }

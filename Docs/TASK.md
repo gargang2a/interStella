@@ -1289,3 +1289,35 @@
   - 새 build를 다시 생성하고 OneDrive로 publish
   - 데스크탑 `RunHost.bat` 후 노트북 `RunClient.bat`로 재실행
   - 그 다음에 owner/input/camera smoke 결과를 다시 판정
+
+### 2026-03-09 06:32 (KST) 진행 스냅샷
+- [x] 세션 진입 / ownership / camera 재확인
+  - 최신 build:
+    - commit=`f443a94`
+  - 확인 결과:
+    - host/client는 같은 Steam lobby와 같은 세션에 진입
+    - client는 `PlayerB` local owner로 판정
+    - camera retarget도 `primary=PlayerB`로 동작
+- [x] movement sync 병목 1차 원인 식별
+  - 현재 구조:
+    - player 이동은 explicit replicate/reconcile 없이 `NetworkTransform`에 크게 의존
+    - `TetherConstraintSolver`는 모든 peer에서 물리를 적용하고 있었음
+  - 해석:
+    - movement sync 오차에 테더 이중 물리가 추가로 divergence를 만들고 있었다.
+- [x] 테더 authoritative 적용 범위 축소
+  - 수정 파일:
+    - Assets/Game/Features/Tether/TetherConstraintSolver.cs
+    - Assets/Game/Netcode/Runtime/TetherNetworkStateReplicator.cs
+  - 변경 내용:
+    - tether force/correction은 offline 또는 server에서만 적용
+    - client는 replicated tether state를 받아 local constraint flag만 반영
+- [x] 검증
+  - Unity script validation:
+    - TetherConstraintSolver.cs errors=0 warnings=0
+    - TetherNetworkStateReplicator.cs errors=0 warnings=1(existing string concat class warning)
+  - EditMode tests:
+    - total=17, passed=17, failed=0
+- [ ] 다음 단계
+  - 새 build/publish 후 동일 2기기 smoke 재실행
+  - movement sync가 얼마나 줄었는지 확인
+  - 남는 오차가 크면 player motion replicate/reconcile 설계로 넘어감

@@ -1500,3 +1500,15 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-bui
 - 이번 변경의 목적:
   - `lobbyId` 수동 전달 제거
   - 잘못된 오래된 lobbyId로 client가 정지 상태처럼 보이는 false-negative 감소
+
+### 2026-03-09 06:32 (KST) Movement Sync Smoke Note
+- 최신 build smoke에서 확인된 상태:
+  - 세션 join은 정상
+  - ownership/camera retarget은 정상
+  - 남은 문제는 player 위치/속도 동기화 품질
+- 이번 턴의 보정:
+  - tether 물리 correction은 server/offline에서만 적용되도록 좁혔다.
+  - client는 replicated tether state로 constraint flag만 반영한다.
+- 따라서 다음 smoke 목적은:
+  - "연결되느냐"가 아니라
+  - "이중 tether 물리 제거 후에도 movement sync 오차가 큰가"를 확인하는 것이다.
