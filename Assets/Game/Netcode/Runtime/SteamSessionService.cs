@@ -89,6 +89,7 @@ namespace InterStella.Game.Netcode.Runtime
         public string ActiveLobbyId => _activeLobbyId;
         public string ActiveHostSteamId => _activeHostSteamId;
         public string StateName => _lifecycleState.ToString();
+        public string AutoInviteFriendSteamId => Normalize(_autoInviteFriendSteamId);
 
         private void Awake()
         {

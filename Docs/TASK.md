@@ -1028,3 +1028,23 @@
   - 실제 Steam 2계정/2프로세스 smoke에서 auto-invite 경로 검증
   - invite 발신 UX를 inspector/button/UI 중 어느 경계로 노출할지 결정
   - smoke 결과를 strict 회귀와 분리된 운영 절차로 문서화
+
+### 2026-03-08 16:53 (KST) 진행 스냅샷
+- [x] Steam manual smoke debug 표면 추가
+  - 파일:
+    - Assets/Game/Netcode/Runtime/SteamSessionService.cs
+    - Assets/Game/Netcode/Editor/InterStellaNetcodeDebugActions.cs
+  - 신규 debug 메뉴:
+    - Tools/InterStella/Debug/Steam/Log Session Snapshot
+    - Tools/InterStella/Debug/Steam/Copy Join Launch Args
+    - Tools/InterStella/Debug/Steam/Invite Configured Friend
+- [x] 수동 smoke 편의성 보강
+  - SteamSessionService.AutoInviteFriendSteamId 읽기 공개
+  - host active lobby 기준 join launch args를 clipboard로 복사 가능
+  - session/bootstrap/lobby 상태를 한 줄 snapshot으로 확인 가능
+- [x] 검증
+  - EditMode tests: total=16, passed=16, failed=0
+  - script validation: SteamSessionService.cs, InterStellaNetcodeDebugActions.cs errors/warnings 0
+- [ ] 다음 단계
+  - 실제 2실계정 host/client smoke에서 menu + clipboard join args 흐름 검증
+  - 필요시 invite 발신을 debug menu에서 inspector/UI로 승격

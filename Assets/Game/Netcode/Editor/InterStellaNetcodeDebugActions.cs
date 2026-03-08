@@ -1,6 +1,7 @@
 using InterStella.Game.Features.Scavenge;
 using InterStella.Game.Features.Stations;
 using InterStella.Game.Features.Player;
+using InterStella.Game.Netcode.Runtime;
 using UnityEditor;
 using UnityEngine;
 
@@ -243,6 +244,74 @@ namespace InterStella.EditorTools
             Debug.Log($"[InterStella][CameraSmoke] {status} firstDistance={firstPersonDistance:F2} thirdDistance={thirdPersonDistance:F2} overviewHeight={overviewHeight:F2} mode={cameraController.CurrentModeName}");
         }
 
+        [MenuItem("Tools/InterStella/Debug/Steam/Log Session Snapshot")]
+        private static void LogSteamSessionSnapshot()
+        {
+            if (!TryGetSteamSession(out SteamSessionService steamSession))
+            {
+                return;
+            }
+
+            SteamworksBootstrap bootstrap = Object.FindObjectOfType<SteamworksBootstrap>();
+            string bootstrapState = bootstrap == null
+                ? "missing"
+                : $"initialized={bootstrap.IsInitialized}, localSteamId={bootstrap.LocalSteamIdString}, lastError={bootstrap.LastInitError}";
+
+            Debug.Log(
+                "[InterStella][SteamDebug] " +
+                $"state={steamSession.StateName}, " +
+                $"sessionActive={steamSession.IsSessionActive}, " +
+                $"isHost={steamSession.IsHost}, " +
+                $"lobbyId={steamSession.ActiveLobbyId}, " +
+                $"hostSteamId={steamSession.ActiveHostSteamId}, " +
+                $"autoInviteFriend={steamSession.AutoInviteFriendSteamId}, " +
+                $"bootstrap=({bootstrapState})");
+        }
+
+        [MenuItem("Tools/InterStella/Debug/Steam/Copy Join Launch Args")]
+        private static void CopySteamJoinLaunchArguments()
+        {
+            if (!TryGetSteamSession(out SteamSessionService steamSession))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(steamSession.ActiveLobbyId))
+            {
+                Debug.LogWarning("[InterStella][SteamDebug] Cannot copy join args because there is no active Steam lobby.");
+                return;
+            }
+
+            string launchArgs = $"-interstella-provider steam +connect_lobby {steamSession.ActiveLobbyId}";
+            EditorGUIUtility.systemCopyBuffer = launchArgs;
+            Debug.Log("[InterStella][SteamDebug] Copied join launch args to clipboard: " + launchArgs);
+        }
+
+        [MenuItem("Tools/InterStella/Debug/Steam/Invite Configured Friend")]
+        private static void InviteConfiguredSteamFriend()
+        {
+            if (!TryGetSteamSession(out SteamSessionService steamSession))
+            {
+                return;
+            }
+
+            string targetSteamId = steamSession.AutoInviteFriendSteamId;
+            if (string.IsNullOrWhiteSpace(targetSteamId))
+            {
+                Debug.LogWarning("[InterStella][SteamDebug] SteamSessionService._autoInviteFriendSteamId is empty.");
+                return;
+            }
+
+            bool invited = steamSession.TryInviteUserToActiveLobby(targetSteamId, out string details);
+            if (invited)
+            {
+                Debug.Log("[InterStella][SteamDebug] Invite configured friend succeeded. " + details);
+                return;
+            }
+
+            Debug.LogWarning("[InterStella][SteamDebug] Invite configured friend failed. " + details);
+        }
+
         private static bool TryGetCameraController(out PlayerCameraModeController cameraController)
         {
             cameraController = null;
@@ -262,6 +331,25 @@ namespace InterStella.EditorTools
             if (!mainCamera.TryGetComponent(out cameraController))
             {
                 Debug.LogWarning("[InterStella][Debug] Main Camera is missing PlayerCameraModeController.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryGetSteamSession(out SteamSessionService steamSession)
+        {
+            steamSession = null;
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[InterStella][SteamDebug] Play mode is required for Steam debug actions.");
+                return false;
+            }
+
+            steamSession = Object.FindObjectOfType<SteamSessionService>();
+            if (steamSession == null)
+            {
+                Debug.LogWarning("[InterStella][SteamDebug] SteamSessionService was not found in the active scene.");
                 return false;
             }
 

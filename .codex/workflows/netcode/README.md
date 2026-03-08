@@ -122,3 +122,14 @@ Pass evidence:
   - `Assets/Screenshots/gate4_camera_firstperson_v2.png`
   - `Assets/Screenshots/gate4_camera_thirdperson_v2.png`
   - `Assets/Screenshots/gate4_camera_overview_v2.png`
+
+Steam manual smoke helpers:
+- Play mode menu actions:
+  - Tools/InterStella/Debug/Steam/Log Session Snapshot
+  - Tools/InterStella/Debug/Steam/Copy Join Launch Args
+  - Tools/InterStella/Debug/Steam/Invite Configured Friend
+- Recommended manual flow:
+  1. Host editor enters Play with Steam provider enabled.
+  2. Run Log Session Snapshot and confirm a non-empty lobbyId plus initialized bootstrap.
+  3. Use Copy Join Launch Args for the joining client editor.
+  4. If overlay invite is needed again, run Invite Configured Friend.

@@ -1303,3 +1303,19 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interste
   - 대상 SteamID를 현재는 수동 입력해야 한다.
 - 최신 검증:
   - EditMode tests: total=16, passed=16, failed=0
+
+### 2026-03-08 16:53 (KST) Steam Manual Smoke Update
+- Play mode debug 메뉴:
+  - Tools/InterStella/Debug/Steam/Log Session Snapshot
+    - 현재 state, sessionActive, isHost, lobbyId, hostSteamId, autoInviteFriend, SteamworksBootstrap 상태를 출력
+  - Tools/InterStella/Debug/Steam/Copy Join Launch Args
+    - clipboard에 -interstella-provider steam +connect_lobby <lobbyId> 복사
+  - Tools/InterStella/Debug/Steam/Invite Configured Friend
+    - SteamSessionService._autoInviteFriendSteamId 대상으로 active lobby invite 재전송
+- 권장 smoke 순서:
+  1. host Play 시작 (provider=steam)
+  2. Log Session Snapshot으로 lobby/host/bootstrap 상태 확인
+  3. 필요시 Copy Join Launch Args로 client 런치 인자 확보
+  4. 필요시 Invite Configured Friend로 Steam overlay 초대 재전송
+- 최신 검증:
+  - EditMode tests: total=16, passed=16, failed=0
