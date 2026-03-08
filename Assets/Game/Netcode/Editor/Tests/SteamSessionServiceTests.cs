@@ -202,6 +202,84 @@ namespace InterStella.Game.Netcode.Editor.Tests
             }
         }
 
+        [Test]
+        public void StartSession_HostSteamProvider_WithAutoInvite_SendsInvite()
+        {
+            const string lobbyId = "76561198000111111";
+            const string hostSteamId = "76561198000222222";
+            const string inviteeSteamId = "76561198000333333";
+            string previousProvider = Environment.GetEnvironmentVariable("INTERSTELLA_PROVIDER");
+            GameObject root = new GameObject("SteamSessionServiceTests_HostAutoInvite");
+            try
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", "steam");
+
+                FakeNetworkSessionService fakeSession = root.AddComponent<FakeNetworkSessionService>();
+                fakeSession.Configure(isHost: true, startResult: true);
+
+                FakeSteamLobbyService fakeLobbyService = root.AddComponent<FakeSteamLobbyService>();
+                fakeLobbyService.ConfigureCreate(result: true, lobbyId, hostSteamId);
+                fakeLobbyService.ConfigureInvite(result: true);
+
+                SteamSessionService steamSession = root.AddComponent<SteamSessionService>();
+                SetPrivateField(steamSession, "_networkSessionBehaviour", fakeSession);
+                SetPrivateField(steamSession, "_steamLobbyServiceBehaviour", fakeLobbyService);
+                SetPrivateField(steamSession, "_allowRuntimeOverride", false);
+                SetPrivateField(steamSession, "_autoInviteFriendSteamId", inviteeSteamId);
+
+                bool started = steamSession.StartSession();
+
+                Assert.That(started, Is.True);
+                Assert.That(fakeLobbyService.CreateCallCount, Is.EqualTo(1));
+                Assert.That(fakeLobbyService.InviteCallCount, Is.EqualTo(1));
+                Assert.That(fakeLobbyService.LastInviteLobbyId, Is.EqualTo(lobbyId));
+                Assert.That(fakeLobbyService.LastInviteTargetSteamId, Is.EqualTo(inviteeSteamId));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", previousProvider);
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void TryInviteUserToActiveLobby_HostSteamProvider_DelegatesToLobbyService()
+        {
+            const string lobbyId = "76561198000444444";
+            const string inviteeSteamId = "76561198000555555";
+            string previousProvider = Environment.GetEnvironmentVariable("INTERSTELLA_PROVIDER");
+            GameObject root = new GameObject("SteamSessionServiceTests_DirectInvite");
+            try
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", "steam");
+
+                FakeNetworkSessionService fakeSession = root.AddComponent<FakeNetworkSessionService>();
+                fakeSession.Configure(isHost: true, startResult: true);
+
+                FakeSteamLobbyService fakeLobbyService = root.AddComponent<FakeSteamLobbyService>();
+                fakeLobbyService.ConfigureInvite(result: true);
+
+                SteamSessionService steamSession = root.AddComponent<SteamSessionService>();
+                SetPrivateField(steamSession, "_networkSessionBehaviour", fakeSession);
+                SetPrivateField(steamSession, "_steamLobbyServiceBehaviour", fakeLobbyService);
+                SetPrivateField(steamSession, "_allowRuntimeOverride", false);
+                SetPrivateField(steamSession, "_activeLobbyId", lobbyId);
+
+                bool invited = steamSession.TryInviteUserToActiveLobby(inviteeSteamId, out string details);
+
+                Assert.That(invited, Is.True);
+                Assert.That(details, Does.Contain("invite"));
+                Assert.That(fakeLobbyService.InviteCallCount, Is.EqualTo(1));
+                Assert.That(fakeLobbyService.LastInviteLobbyId, Is.EqualTo(lobbyId));
+                Assert.That(fakeLobbyService.LastInviteTargetSteamId, Is.EqualTo(inviteeSteamId));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("INTERSTELLA_PROVIDER", previousProvider);
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
         private static void SetPrivateField(object target, string fieldName, object value)
         {
             FieldInfo field = target.GetType().GetField(fieldName, PrivateInstance);
@@ -254,12 +332,16 @@ namespace InterStella.Game.Netcode.Editor.Tests
             private string _createdHostSteamId = "76561198000000002";
             private bool _joinResult = true;
             private string _joinedHostSteamId = "76561198000000003";
+            private bool _inviteResult = true;
             private string _pendingInviteLobbyId = string.Empty;
 
             public int CreateCallCount { get; private set; }
             public int JoinCallCount { get; private set; }
+            public int InviteCallCount { get; private set; }
             public int LeaveCallCount { get; private set; }
             public string LastJoinLobbyId { get; private set; }
+            public string LastInviteLobbyId { get; private set; }
+            public string LastInviteTargetSteamId { get; private set; }
             public string LastLeaveLobbyId { get; private set; }
 
             public void ConfigureCreate(bool result, string lobbyId, string hostSteamId)
@@ -273,6 +355,11 @@ namespace InterStella.Game.Netcode.Editor.Tests
             {
                 _joinResult = result;
                 _joinedHostSteamId = hostSteamId;
+            }
+
+            public void ConfigureInvite(bool result)
+            {
+                _inviteResult = result;
             }
 
             public void QueuePendingInvite(string lobbyId)
@@ -308,6 +395,15 @@ namespace InterStella.Game.Netcode.Editor.Tests
 
                 _pendingInviteLobbyId = string.Empty;
                 return true;
+            }
+
+            public bool TryInviteUser(string lobbyId, string targetSteamId, out string details)
+            {
+                InviteCallCount++;
+                LastInviteLobbyId = lobbyId;
+                LastInviteTargetSteamId = targetSteamId;
+                details = _inviteResult ? "fake invite ok" : "fake invite failed";
+                return _inviteResult;
             }
 
             public void LeaveLobby(string lobbyId)

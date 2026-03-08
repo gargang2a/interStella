@@ -1285,3 +1285,21 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interste
 - 최신 검증:
   - EditMode tests: total=14, passed=14, failed=0
 
+
+### 2026-03-08 16:30 (KST) Steam Invite Update
+- host invite 발신 경로:
+  - runtime API: SteamSessionService.TryInviteUserToActiveLobby(string targetSteamId, out string details)
+  - lobby API: SteamworksLobbyService.TryInviteUser(...)
+- auto-invite 실행 방법:
+  - host Play 전에 SteamSessionService._autoInviteFriendSteamId에 대상 SteamID 입력
+  - 또는 CLI/ENV 사용:
+    - -interstella-invite-friend-id <steamId>
+    - INTERSTELLA_STEAM_INVITE_FRIEND_ID=<steamId>
+- 동작 시점:
+  - host가 Steam lobby create + network session start를 마친 뒤 auto-invite를 시도한다.
+  - invite 실패는 현재 session start 실패로 승격하지 않고 warning/log로만 남긴다.
+- 현재 한계:
+  - UI 버튼/친구 목록 기반 invite UX는 아직 없음.
+  - 대상 SteamID를 현재는 수동 입력해야 한다.
+- 최신 검증:
+  - EditMode tests: total=16, passed=16, failed=0

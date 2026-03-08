@@ -35,6 +35,10 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField]
         private string _localSteamUserId = "editor-local-user";
 
+        [Header("Optional Host Invite")]
+        [SerializeField]
+        private string _autoInviteFriendSteamId = string.Empty;
+
         [Header("Invite Bootstrap")]
         [SerializeField]
         private string _queuedInviteLobbyId = string.Empty;
@@ -58,6 +62,9 @@ namespace InterStella.Game.Netcode.Runtime
 
         [SerializeField]
         private string _inviteHostIdArgument = "interstella-invite-host-id";
+
+        [SerializeField]
+        private string _inviteFriendIdArgument = "interstella-invite-friend-id";
 
         [SerializeField]
         private string _connectLobbyArgument = "connect_lobby";
@@ -117,6 +124,7 @@ namespace InterStella.Game.Netcode.Runtime
             if (started)
             {
                 Debug.Log($"[SteamSessionService] Session started. lobbyId={_activeLobbyId}, hostSteamId={_activeHostSteamId}, networkHost={_networkSession.IsHost}.");
+                TrySendAutoInviteIfConfigured();
             }
             else
             {
@@ -140,6 +148,39 @@ namespace InterStella.Game.Netcode.Runtime
             _queuedInviteHostSteamId = Normalize(hostSteamId);
             RefreshLifecycleFromState();
             Debug.Log($"[SteamSessionService] Invite queued. lobbyId={_queuedInviteLobbyId}, hostSteamId={_queuedInviteHostSteamId}.");
+        }
+
+        public bool TryInviteUserToActiveLobby(string targetSteamId, out string details)
+        {
+            details = string.Empty;
+            ResolveNetworkSession();
+            ResolveSteamLobbyServiceIfMissing();
+
+            if (!IsSteamProviderConfigured())
+            {
+                details = "Steam invite is unavailable because the active provider is not Steam.";
+                return false;
+            }
+
+            if (!IsHost)
+            {
+                details = "Steam invite is only supported from the host session in the current MVP flow.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(_activeLobbyId))
+            {
+                details = "Steam invite is unavailable because there is no active lobby.";
+                return false;
+            }
+
+            if (_steamLobbyService == null)
+            {
+                details = "Steam invite is unavailable because ISteamLobbyService is missing.";
+                return false;
+            }
+
+            return _steamLobbyService.TryInviteUser(_activeLobbyId, targetSteamId, out details);
         }
 
         public bool TryJoinLobby(string lobbyId, string hostSteamId)
@@ -372,6 +413,12 @@ namespace InterStella.Game.Netcode.Runtime
                 _localSteamUserId = selfSteamId.Trim();
             }
 
+            string inviteFriendSteamId = ReadRuntimeOverride(_inviteFriendIdArgument, "INTERSTELLA_STEAM_INVITE_FRIEND_ID");
+            if (!string.IsNullOrWhiteSpace(inviteFriendSteamId))
+            {
+                _autoInviteFriendSteamId = inviteFriendSteamId.Trim();
+            }
+
             string inviteLobbyId = ReadRuntimeOverride(_inviteLobbyIdArgument, "INTERSTELLA_INVITE_LOBBY_ID");
             if (string.IsNullOrWhiteSpace(inviteLobbyId))
             {
@@ -412,6 +459,30 @@ namespace InterStella.Game.Netcode.Runtime
             if (_steamLobbyService != null && _steamLobbyService.TryConsumePendingInvite(out string pendingInviteLobbyId))
             {
                 QueueInvite(pendingInviteLobbyId, string.Empty);
+            }
+        }
+
+        private void TrySendAutoInviteIfConfigured()
+        {
+            if (!IsHost || !IsSteamProviderConfigured())
+            {
+                return;
+            }
+
+            string inviteTarget = Normalize(_autoInviteFriendSteamId);
+            if (string.IsNullOrWhiteSpace(inviteTarget))
+            {
+                return;
+            }
+
+            bool invited = TryInviteUserToActiveLobby(inviteTarget, out string details);
+            if (invited)
+            {
+                Debug.Log("[SteamSessionService] Auto invite succeeded. " + details);
+            }
+            else
+            {
+                Debug.LogWarning("[SteamSessionService] Auto invite failed. " + details);
             }
         }
 

@@ -1003,3 +1003,28 @@
   - 실제 Steam 2계정/2프로세스 provider=steam smoke 검증
   - lobby invite 발신(InviteUserToLobby) UI/운영 경계 추가
   - strict 자동화와 실제 Steam smoke 절차 분리 고정
+
+### 2026-03-08 16:30 (KST) 진행 스냅샷
+- [x] Steam invite 발신 경계 추가
+  - 파일:
+    - Assets/Game/Netcode/Runtime/ISteamLobbyService.cs
+    - Assets/Game/Netcode/Runtime/SteamworksLobbyService.cs
+    - Assets/Game/Netcode/Runtime/SteamSessionService.cs
+  - 변경:
+    - host active lobby 기준 InviteUserToLobby 래핑
+    - SteamSessionService.TryInviteUserToActiveLobby(...) 추가
+    - host session start 이후 optional auto-invite 지원
+- [x] smoke 실행용 runtime override 추가
+  - 인자/환경변수:
+    - -interstella-invite-friend-id <steamId>
+    - INTERSTELLA_STEAM_INVITE_FRIEND_ID=<steamId>
+  - 용도: host가 session start 직후 대상 SteamID로 초대를 자동 전송
+- [x] 검증
+  - EditMode tests: total=16, passed=16, failed=0
+  - 신규 검증:
+    - SteamSessionServiceTests.StartSession_HostSteamProvider_WithAutoInvite_SendsInvite
+    - SteamSessionServiceTests.TryInviteUserToActiveLobby_HostSteamProvider_DelegatesToLobbyService
+- [ ] 다음 단계
+  - 실제 Steam 2계정/2프로세스 smoke에서 auto-invite 경로 검증
+  - invite 발신 UX를 inspector/button/UI 중 어느 경계로 노출할지 결정
+  - smoke 결과를 strict 회귀와 분리된 운영 절차로 문서화

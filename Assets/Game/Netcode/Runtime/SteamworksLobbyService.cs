@@ -202,6 +202,54 @@ namespace InterStella.Game.Netcode.Runtime
             return true;
         }
 
+        public bool TryInviteUser(string lobbyId, string targetSteamId, out string details)
+        {
+            details = string.Empty;
+
+            if (!TryParseLobbyId(lobbyId, out CSteamID lobbySteamId))
+            {
+                details = $"Steam lobby invite failed: lobbyId='{lobbyId}' is not a valid Steam lobby id.";
+                _lastOperationDetails = details;
+                return false;
+            }
+
+            if (!TryParseSteamId(targetSteamId, out ulong inviteeSteamIdValue))
+            {
+                details = $"Steam lobby invite failed: targetSteamId='{targetSteamId}' is not a valid Steam user id.";
+                _lastOperationDetails = details;
+                return false;
+            }
+
+            ResolveSteamworksBootstrapIfMissing();
+            RegisterCallbacksIfNeeded();
+            if (!EnsureSteamInitialized(out details))
+            {
+                _lastOperationDetails = details;
+                return false;
+            }
+
+            CSteamID inviteeSteamId = new CSteamID(inviteeSteamIdValue);
+            if (!inviteeSteamId.IsValid())
+            {
+                details = $"Steam lobby invite failed: targetSteamId='{targetSteamId}' was parsed but is not a valid SteamID.";
+                _lastOperationDetails = details;
+                return false;
+            }
+
+            bool invited = SteamMatchmaking.InviteUserToLobby(lobbySteamId, inviteeSteamId);
+            details = invited
+                ? $"Steam lobby invite sent. lobbyId={lobbyId}, inviteeSteamId={inviteeSteamId.m_SteamID}."
+                : $"Steam lobby invite API returned false. lobbyId={lobbyId}, inviteeSteamId={inviteeSteamId.m_SteamID}.";
+            _lastOperationDetails = details;
+
+            if (invited)
+            {
+                Log(details);
+            }
+
+            return invited;
+        }
+
         public void LeaveLobby(string lobbyId)
         {
             if (!TryParseLobbyId(lobbyId, out CSteamID lobbySteamId))
