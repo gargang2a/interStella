@@ -1319,3 +1319,19 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\sync-interste
   4. 필요시 Invite Configured Friend로 Steam overlay 초대 재전송
 - 최신 검증:
   - EditMode tests: total=16, passed=16, failed=0
+
+### 2026-03-08 17:25 (KST) Steam Client Launch Helper Update
+- 수동 smoke용 clone client launcher:
+  - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\launch-steam-client.ps1 -UseClipboardJoinArgs -StrictSteamRelay -WaitForBoot
+- 입력 경로:
+  - -LobbyId <steamLobbyId> 직접 입력
+  - 또는 -UseClipboardJoinArgs로 Copy Join Launch Args 결과 사용
+- 자동 추출:
+  - -HubSessionId, -AccessToken 미지정 시 host Unity 프로세스(C:\Unity\interStella)에서 자동 추출
+- 안전 모드:
+  - -WhatIfLaunch는 실제 editor 실행 없이 최종 Unity command만 출력
+- 권장 순서:
+  1. host Play + Steam provider
+  2. Log Session Snapshot
+  3. Copy Join Launch Args
+  4. launch-steam-client.ps1 -UseClipboardJoinArgs -StrictSteamRelay -WaitForBoot

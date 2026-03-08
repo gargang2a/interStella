@@ -1048,3 +1048,22 @@
 - [ ] 다음 단계
   - 실제 2실계정 host/client smoke에서 menu + clipboard join args 흐름 검증
   - 필요시 invite 발신을 debug menu에서 inspector/UI로 승격
+
+### 2026-03-08 17:25 (KST) 진행 스냅샷
+- [x] Steam clone client launch helper 추가
+  - 신규 파일: .codex/workflows/client/launch-steam-client.ps1
+  - 역할:
+    - host Unity 프로세스에서 hubSessionId/AccessToken 자동 추출
+    - -LobbyId 또는 clipboard +connect_lobby 기준으로 clone editor 실행
+    - optional -WaitForBoot로 client log startup 신호 확인
+    - -WhatIfLaunch로 실제 실행 없이 명령 미리보기 지원
+- [x] workflow 문서 보강
+  - 파일:
+    - .codex/workflows/client/README.md
+    - .codex/workflows/netcode/README.md
+- [x] 검증
+  - PowerShell parse: POWERSHELL_PARSE_OK
+  - preview 실행: STEAM_CLIENT_LAUNCH_PREVIEW ...
+- [ ] 다음 단계
+  - 실제 2실계정에서 host menu -> clipboard join args -> launch helper 흐름 검증
+  - smoke 성공/실패 로그 패턴을 helper에 더 명확히 반영

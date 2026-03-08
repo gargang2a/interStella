@@ -128,8 +128,11 @@ Steam manual smoke helpers:
   - Tools/InterStella/Debug/Steam/Log Session Snapshot
   - Tools/InterStella/Debug/Steam/Copy Join Launch Args
   - Tools/InterStella/Debug/Steam/Invite Configured Friend
+- Client launcher helper:
+  - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\client\launch-steam-client.ps1 -UseClipboardJoinArgs -StrictSteamRelay -WaitForBoot
 - Recommended manual flow:
   1. Host editor enters Play with Steam provider enabled.
   2. Run Log Session Snapshot and confirm a non-empty lobbyId plus initialized bootstrap.
-  3. Use Copy Join Launch Args for the joining client editor.
-  4. If overlay invite is needed again, run Invite Configured Friend.
+  3. Run Copy Join Launch Args.
+  4. Launch the clone client editor with launch-steam-client.ps1 -UseClipboardJoinArgs.
+  5. If overlay invite is needed again, run Invite Configured Friend.
