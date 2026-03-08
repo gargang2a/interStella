@@ -16,6 +16,13 @@ namespace InterStella.Game.Features.Player
         [SerializeField]
         private bool _enableWhenBridgeMissing = true;
 
+        [SerializeField]
+        private bool _logGateTransitions = true;
+
+        private bool _hasLoggedState;
+        private bool _lastInputEnabled;
+        private bool _lastInteractionEnabled;
+
         private void Awake()
         {
             ResolveDependenciesIfMissing();
@@ -88,7 +95,33 @@ namespace InterStella.Game.Features.Player
                 {
                     _playerInteraction.enabled = shouldEnableInteraction;
                 }
+
+                TryLogGateState(shouldEnable, shouldEnableInteraction);
+                return;
             }
+
+            TryLogGateState(shouldEnable, false);
+        }
+
+        private void TryLogGateState(bool inputEnabled, bool interactionEnabled)
+        {
+            if (!_logGateTransitions)
+            {
+                return;
+            }
+
+            if (_hasLoggedState && _lastInputEnabled == inputEnabled && _lastInteractionEnabled == interactionEnabled)
+            {
+                return;
+            }
+
+            _hasLoggedState = true;
+            _lastInputEnabled = inputEnabled;
+            _lastInteractionEnabled = interactionEnabled;
+
+            int ownerId = _networkBridge == null ? -1 : _networkBridge.OwnerId;
+            bool localOwner = _networkBridge != null && _networkBridge.IsAuthoritativeOwner;
+            Debug.Log("[PlayerOwnershipInputGate] object=" + name + ", ownerId=" + ownerId + ", localOwner=" + localOwner + ", input=" + inputEnabled + ", interaction=" + interactionEnabled);
         }
     }
 }

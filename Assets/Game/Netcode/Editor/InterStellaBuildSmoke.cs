@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -14,6 +15,9 @@ namespace InterStella.EditorTools
         private const string DEFAULT_DEVELOPMENT_ARGUMENT = "interstella-build-development";
         private const string DEFAULT_OUTPUT_PATH = "Builds/SteamSmokeWindows64/interStella-Smoke.exe";
         private const string STEAM_APP_ID_FILE = "steam_appid.txt";
+        private const string BUILD_INFO_FILE = "build-info.txt";
+        private const string HOST_LAUNCHER_FILE = "RunHost.bat";
+        private const string CLIENT_LAUNCHER_FILE = "RunClient.bat";
         private static readonly string[] BUILD_SCENES =
         {
             "Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity"
@@ -78,6 +82,8 @@ namespace InterStella.EditorTools
             }
 
             CopySteamAppIdFile(outputDirectory);
+            CreateLauncherBatchFiles(outputDirectory, Path.GetFileName(normalizedOutputPath));
+            WriteBuildInfoFile(outputDirectory, normalizedOutputPath, summary, developmentBuild);
             Debug.Log(
                 $"[InterStella][BuildSmoke] Windows64 smoke build succeeded. output={normalizedOutputPath}, size={summary.totalSize}, warnings={summary.totalWarnings}, duration={summary.totalTime}.");
         }
@@ -98,6 +104,169 @@ namespace InterStella.EditorTools
 
             string targetPath = Path.Combine(outputDirectory, STEAM_APP_ID_FILE);
             File.Copy(sourcePath, targetPath, overwrite: true);
+        }
+
+        private static void CreateLauncherBatchFiles(string outputDirectory, string executableFileName)
+        {
+            string hostLauncherPath = Path.Combine(outputDirectory, HOST_LAUNCHER_FILE);
+            string clientLauncherPath = Path.Combine(outputDirectory, CLIENT_LAUNCHER_FILE);
+
+            File.WriteAllText(hostLauncherPath, BuildHostLauncherContents(executableFileName), new UTF8Encoding(false));
+            File.WriteAllText(clientLauncherPath, BuildClientLauncherContents(executableFileName), new UTF8Encoding(false));
+        }
+
+        private static void WriteBuildInfoFile(string outputDirectory, string normalizedOutputPath, BuildSummary summary, bool developmentBuild)
+        {
+            string buildInfoPath = Path.Combine(outputDirectory, BUILD_INFO_FILE);
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? string.Empty;
+            ResolveGitBranchAndCommit(projectRoot, out string branchName, out string commitHash);
+
+            string[] lines =
+            {
+                "build_local=" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"),
+                "build_utc=" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'"),
+                "unity_version=" + Application.unityVersion,
+                "development_build=" + developmentBuild,
+                "output_path=" + normalizedOutputPath,
+                "output_size_bytes=" + summary.totalSize,
+                "build_duration=" + summary.totalTime,
+                "branch=" + branchName,
+                "commit=" + commitHash,
+                "scene_0=" + BUILD_SCENES[0]
+            };
+
+            File.WriteAllLines(buildInfoPath, lines, new UTF8Encoding(false));
+        }
+
+        private static string BuildHostLauncherContents(string executableFileName)
+        {
+            string newLine = Environment.NewLine;
+            return string.Join(newLine, new[]
+            {
+                "@echo off",
+                "setlocal",
+                "set \"EXE=%~dp0" + executableFileName + "\"",
+                "set \"LOG=%~dp0steam-build-host.log\"",
+                "if not exist \"%EXE%\" (",
+                "  echo Build executable not found: \"%EXE%\"",
+                "  pause",
+                "  exit /b 1",
+                ")",
+                "start \"interStella Host\" \"%EXE%\" -interstella-provider steam -interstella-steam-strict-relay 1 -interstella-mode host -interstella-address 127.0.0.1 -interstella-port 7770 -logFile \"%LOG%\"",
+                "echo Host launched.",
+                "echo Log: \"%LOG%\"",
+                "echo After the lobby is created, send the lobbyId to the client user.",
+                "pause"
+            }) + newLine;
+        }
+
+        private static string BuildClientLauncherContents(string executableFileName)
+        {
+            string newLine = Environment.NewLine;
+            return string.Join(newLine, new[]
+            {
+                "@echo off",
+                "setlocal",
+                "set \"EXE=%~dp0" + executableFileName + "\"",
+                "set \"LOG=%~dp0steam-build-client.log\"",
+                "set \"LOBBY_ID=%~1\"",
+                "if \"%LOBBY_ID%\"==\"\" (",
+                "  set /p LOBBY_ID=Enter lobbyId: ",
+                ")",
+                "if \"%LOBBY_ID%\"==\"\" (",
+                "  echo lobbyId is required.",
+                "  pause",
+                "  exit /b 1",
+                ")",
+                "if not exist \"%EXE%\" (",
+                "  echo Build executable not found: \"%EXE%\"",
+                "  pause",
+                "  exit /b 1",
+                ")",
+                "start \"interStella Client\" \"%EXE%\" -interstella-provider steam -interstella-steam-strict-relay 1 -interstella-mode client -interstella-address 127.0.0.1 -interstella-port 7770 +connect_lobby %LOBBY_ID% -logFile \"%LOG%\"",
+                "echo Client launched with lobbyId %LOBBY_ID%.",
+                "echo Log: \"%LOG%\"",
+                "pause"
+            }) + newLine;
+        }
+
+        private static void ResolveGitBranchAndCommit(string projectRoot, out string branchName, out string commitHash)
+        {
+            branchName = "unknown";
+            commitHash = "unknown";
+
+            string gitDirectory = ResolveGitDirectory(projectRoot);
+            if (string.IsNullOrWhiteSpace(gitDirectory))
+            {
+                return;
+            }
+
+            string headPath = Path.Combine(gitDirectory, "HEAD");
+            if (!File.Exists(headPath))
+            {
+                return;
+            }
+
+            string headContents = File.ReadAllText(headPath).Trim();
+            if (string.IsNullOrWhiteSpace(headContents))
+            {
+                return;
+            }
+
+            if (!headContents.StartsWith("ref: ", StringComparison.OrdinalIgnoreCase))
+            {
+                commitHash = headContents;
+                return;
+            }
+
+            string referencePath = headContents.Substring(5).Trim();
+            branchName = referencePath.StartsWith("refs/heads/", StringComparison.OrdinalIgnoreCase)
+                ? referencePath.Substring("refs/heads/".Length)
+                : referencePath;
+
+            string referenceFilePath = Path.Combine(gitDirectory, referencePath.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(referenceFilePath))
+            {
+                string referenceCommit = File.ReadAllText(referenceFilePath).Trim();
+                if (!string.IsNullOrWhiteSpace(referenceCommit))
+                {
+                    commitHash = referenceCommit;
+                }
+            }
+        }
+
+        private static string ResolveGitDirectory(string projectRoot)
+        {
+            if (string.IsNullOrWhiteSpace(projectRoot))
+            {
+                return string.Empty;
+            }
+
+            string gitPath = Path.Combine(projectRoot, ".git");
+            if (Directory.Exists(gitPath))
+            {
+                return gitPath;
+            }
+
+            if (!File.Exists(gitPath))
+            {
+                return string.Empty;
+            }
+
+            string pointerContents = File.ReadAllText(gitPath).Trim();
+            const string PREFIX = "gitdir:";
+            if (!pointerContents.StartsWith(PREFIX, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            string relativePath = pointerContents.Substring(PREFIX.Length).Trim();
+            if (Path.IsPathRooted(relativePath))
+            {
+                return relativePath;
+            }
+
+            return Path.GetFullPath(Path.Combine(projectRoot, relativePath));
         }
 
         private static string NormalizeOutputPath(string outputPath)

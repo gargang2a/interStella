@@ -8,7 +8,7 @@
 ## Current Focus
 
 > [!tip] 현재 최우선 목표
-> Steam 2실계정 기준 `host build / client build` smoke를 실제로 1회 성공시키는 것.
+> `client local owner/input/camera` 보정 코드는 들어갔다. 이제 실제 Steam 2실계정 smoke로 재검증하는 것.
 
 - 배경:
   - 로컬 ignore 자산 때문에 clone 기준 화면 차이가 생길 수 있다.
@@ -21,6 +21,48 @@
   - build host/client launch helper
 
 ## Latest Snapshot
+
+### 2026-03-08 18:53 (KST)
+
+> [!success] Obsidian task snippet installed
+> 완료 태스크가 Reading View와 Live Preview에서 더 비슷하게 보이도록 CSS snippet을 추가했다.
+
+- snippet:
+  - `.obsidian/snippets/interstella-task-complete.css`
+- 상태:
+  - `appearance.json`에 활성화 반영 완료
+- 다음 확인:
+  - Obsidian에서 snippet reload 또는 앱 재시작
+
+### 2026-03-08 18:56 (KST)
+
+> [!note] Obsidian snippet tuned
+> 완료 task 아래 nested bullet까지 같이 묶이도록 2차 조정했다.
+
+### 2026-03-08 19:06 (KST)
+
+> [!note] Obsidian snippet tuned again
+> Live Preview에서 완료 task 아래 child bullet과 wrapped line까지 더 넓게 묶도록 3차 조정했다.
+
+### 2026-03-08 19:12 (KST)
+
+> [!summary] Build smoke prep complete, teammate smoke pending
+> build 생성 경로와 launcher, 전달 가이드는 준비 완료다. 다만 팀원과의 실제 Steam smoke는 아직 미실행 상태다.
+
+### 2026-03-09 00:03 (KST)
+
+> [!success] Steam smoke connected, but client control failed
+> host/client는 같은 세션에 들어갔다. 다만 client는 조작이 되지 않았고 host와 같은 오브젝트 시점을 보고 있었다.
+
+### 2026-03-09 04:35 (KST)
+
+> [!success] Owner-aware camera retarget and simple batch launchers added
+> Main Camera가 local owner 기준으로 target을 다시 잡도록 보정했고, build 폴더에 `RunHost.bat` / `RunClient.bat`를 자동 생성하도록 했다.
+
+### 2026-03-09 04:48 (KST)
+
+> [!success] Desktop/laptop Git smoke workflow added
+> 두 머신이 같은 브랜치를 직접 pull/build/run하도록 `sync-and-build-steam-smoke.ps1`, `.bat`, `build-info.txt` 경계를 추가했다.
 
 ### 2026-03-08 18:47 (KST)
 
@@ -54,10 +96,10 @@
 
 > [!warning] 아직 직접 확인이 필요한 항목
 
-- 팀원과 실제 2실계정 `host build / client build` smoke 실행
-- host log에서 lobby 생성 확인
-- client log에서 lobby join / binder 적용 확인
-- 성공/실패 로그 패턴을 운영 가이드에 고정
+- 수정 후 실제 Steam 2실계정 smoke 재실행
+- client log에서 `PlayerOwnershipInputGate` 상태 확인
+- host/local owner vs remote observer 표현 경계 재검증
+- `build-info.txt` 기준 최신 build인지 먼저 확인
 
 ## Quick Run
 

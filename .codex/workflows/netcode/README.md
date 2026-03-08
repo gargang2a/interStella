@@ -142,6 +142,9 @@ Steam build smoke helpers:
   - Tools/InterStella/Build/Build Steam Smoke Windows64
 - Batch build wrapper (requires the project to be closed and Unity Hub licensing args):
   - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\build-steam-smoke.ps1
+- Current branch sync + batch build wrapper for desktop/laptop use:
+  - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-build-steam-smoke.ps1
+  - or double-click `.codex\workflows\netcode\sync-and-build-steam-smoke.bat`
 - Built executable launcher:
   - Host:
     - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam-build-smoke.ps1 -Mode host -WaitForBoot
@@ -152,3 +155,12 @@ Steam build smoke helpers:
   2. Launch the built host executable and wait for Steam lobby creation.
   3. Capture the lobby id from the host log or snapshot tooling.
   4. Launch the built client executable with +connect_lobby.
+- Recommended dual-machine flow for one developer using desktop + laptop:
+  1. Desktop: commit + push current branch.
+  2. Laptop:
+     - powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-build-steam-smoke.ps1
+     - or `.codex\workflows\netcode\sync-and-build-steam-smoke.bat`
+  3. Confirm `Builds/SteamSmokeWindows64/build-info.txt` matches the expected branch/commit.
+  4. Run:
+     - `Builds/SteamSmokeWindows64/RunHost.bat`
+     - `Builds/SteamSmokeWindows64/RunClient.bat <lobbyId>`

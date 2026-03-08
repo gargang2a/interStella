@@ -21,5 +21,9 @@ See: `.codex/workflows/client/README.md`
 - `.codex/workflows/netcode/run-reconnect-regression.ps1`
 - `.codex/workflows/netcode/run-e2e-sync-regression.ps1`
 - `.codex/workflows/netcode/run-interaction-regression.ps1`
+- `.codex/workflows/netcode/build-steam-smoke.ps1`
+- `.codex/workflows/netcode/launch-steam-build-smoke.ps1`
+- `.codex/workflows/netcode/sync-and-build-steam-smoke.ps1`
+- `.codex/workflows/netcode/sync-and-build-steam-smoke.bat`
 
 See: `.codex/workflows/netcode/README.md`

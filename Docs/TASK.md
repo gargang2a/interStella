@@ -1130,3 +1130,110 @@
 - [ ] 비고
   - 현재 콘솔에는 MCP 연결 로그와 개발용 info 로그는 남아 있을 수 있다.
   - 이번 수정 대상은 warning/error/exception 정리였다.
+
+### 2026-03-08 18:53 (KST) 진행 스냅샷
+- [x] Obsidian 완료 태스크 CSS snippet 추가
+  - vault 경로:
+    - `C:\Users\gar\Documents\Obsidian Vault\.obsidian\snippets\interstella-task-complete.css`
+  - 활성화:
+    - `.obsidian/appearance.json`에 `enabledCssSnippets=["interstella-task-complete"]` 반영
+- [x] 목적
+  - Reading View와 Live Preview에서 완료 체크박스 줄의 시각 효과를 더 비슷하게 유지
+  - 완료 줄의 취소선/색상/배경 강조를 일관되게 적용
+- [ ] 다음 단계
+  - Obsidian 앱에서 snippet reload 또는 앱 재시작 후 실제 체감 확인
+
+### 2026-03-08 18:56 (KST) 진행 스냅샷
+- [x] Obsidian 완료 태스크 snippet 2차 보정
+  - 변경 방향:
+    - 완료 task 한 줄만이 아니라 완료 task 아래의 nested bullet 블록까지 같이 muted 처리
+    - Reading View와 Live Preview의 시각 차이를 조금 더 줄이는 방향으로 조정
+- [ ] 주의
+  - Live Preview에서 현재 커서가 있는 줄의 raw markdown 표시는 Obsidian 기본 동작이라 완전히 제거되지는 않는다.
+
+### 2026-03-08 19:06 (KST) 진행 스냅샷
+- [x] Obsidian 완료 태스크 snippet 3차 보정
+  - 변경 방향:
+    - Live Preview에서 완료 task 아래 child bullet과 wrapped line까지 같이 muted 처리
+    - 완료 블록 다음의 다른 리스트까지 스타일이 번지지 않도록 reset selector 추가
+  - 참고:
+    - Live Preview는 nested list를 flat sibling DOM으로 렌더링하므로 sibling selector 기준 보정이 필요하다.
+- [ ] 주의
+  - 현재 편집 중인 active line의 raw markdown 노출은 Obsidian 기본 동작이라 CSS만으로 Reading View와 완전히 같게 만들 수는 없다.
+
+### 2026-03-08 19:12 (KST) 진행 스냅샷
+- [x] Steam build smoke 준비 작업 완료 상태로 고정
+  - 의미:
+    - host/client용 build 생성 경로, launcher, 실행 가이드는 준비 완료
+    - 팀원에게 전달할 단일 build 산출물 기준 운영이 가능
+- [ ] 아직 미완료인 항목
+  - 팀원과 실제 2실계정 `host build / client build` smoke는 아직 실행하지 못함
+  - 따라서 lobby 생성, join, binder 적용의 실환경 로그 확인은 아직 남아 있음
+
+### 2026-03-09 00:03 (KST) 진행 스냅샷
+- [x] 실제 Steam 2실계정 `host build / client build` smoke 1차 연결 검증 통과
+  - 확인된 사실:
+    - host/client가 같은 세션에 진입함
+    - Steam build smoke 운영 경로 자체는 실환경에서 동작함
+- [ ] 새로 확인된 문제
+  - client에서 로컬 조작이 되지 않았음
+  - client 시점이 host와 같은 오브젝트 시점을 보고 있었음
+  - 의미:
+    - 세션 연결 문제라기보다 owner/input/camera possession 경계가 잘못 묶였을 가능성이 높음
+- [ ] 다음 단계
+  - player ownership, local input enablement, camera binding을 host/client 기준으로 재검증
+  - remote observer와 local owner의 표현 경계를 분리 점검
+
+### 2026-03-09 04:35 (KST) 진행 스냅샷
+- [x] client local owner 기준 camera retarget 보정
+  - 수정 파일:
+    - Assets/Game/Features/Player/PlayerCameraModeController.cs
+  - 수정 내용:
+    - Main Camera가 더 이상 고정 `PlayerA/PlayerB` 참조만 보지 않고
+    - runtime에 `IsAuthoritativeOwner`인 `PlayerNetworkBridge`를 찾아 local owner를 primary target으로 재바인딩
+- [x] ownership gate 상태 로그 보강
+  - 수정 파일:
+    - Assets/Game/Features/Player/PlayerOwnershipInputGate.cs
+  - 수정 내용:
+    - player별 input/interaction gate 전환 시 ownerId/localOwner/input/interaction 상태를 한 줄 로그로 남김
+- [x] build smoke용 간단 실행 배치 추가
+  - 수정 파일:
+    - Assets/Game/Netcode/Editor/InterStellaBuildSmoke.cs
+  - 생성 산출물:
+    - Builds/SteamSmokeWindows64/RunHost.bat
+    - Builds/SteamSmokeWindows64/RunClient.bat
+  - 동작:
+    - `RunHost.bat`: host 실행
+    - `RunClient.bat`: 첫 인자로 lobbyId를 받거나 없으면 prompt로 입력
+- [x] 검증
+  - Unity refresh/compile ready
+  - EditMode tests: total=17, passed=17, failed=0
+  - 참고:
+    - 콘솔의 `RepairObjectiveNetworkState`, `PlayerFuelNetworkState`, `TetherNetworkStateReplicator` `OnValidate` 숨김 warning 3개는 기존 경고이며 이번 수정과 무관
+- [ ] 다음 단계
+  - 실제 Steam 2실계정 smoke를 다시 돌려 client local owner/input/camera가 정상 의미로 보이는지 재검증
+
+### 2026-03-09 04:48 (KST) 진행 스냅샷
+- [x] 데스크탑/노트북 공용 Git 기반 smoke workflow 추가
+  - 신규 파일:
+    - .codex/workflows/netcode/sync-and-build-steam-smoke.ps1
+    - .codex/workflows/netcode/sync-and-build-steam-smoke.bat
+  - 기능:
+    - 현재 브랜치 fetch/pull --ff-only
+    - dirty worktree 기본 차단
+    - 최신 소스 기준 Steam smoke build 실행
+    - build output의 `build-info.txt` 출력
+- [x] build 산출물 버전 추적 보강
+  - 수정 파일:
+    - Assets/Game/Netcode/Editor/InterStellaBuildSmoke.cs
+  - 추가 산출물:
+    - Builds/SteamSmokeWindows64/build-info.txt
+  - 기록 내용:
+    - build 시각
+    - Unity 버전
+    - branch
+    - commit
+    - output path
+- [ ] 다음 단계
+  - 두 머신 모두 새 workflow 기준으로 pull/build/run을 통일
+  - stale build가 아닌 최신 build에서 owner/input/camera smoke 재검증

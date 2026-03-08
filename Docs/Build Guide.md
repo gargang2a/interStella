@@ -1383,3 +1383,82 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam
     - `Steam is probably not running` warning
     - `FishySteamworks.Update()` 관련 `NullReferenceException`
 - 이번 수정으로 direct provider에서는 Steam bootstrap이 startup에 개입하지 않도록 정리했다.
+
+### 2026-03-08 18:53 (KST) Obsidian CSS Snippet Update
+- 완료 태스크 시각 일관성 보강:
+  - snippet: `.obsidian/snippets/interstella-task-complete.css`
+  - 설정: `.obsidian/appearance.json`
+- 기대 효과:
+  - 완료 체크박스 줄에 취소선, muted text, 은은한 배경 강조를 Reading View / Live Preview 양쪽에 적용
+- 적용 후 확인:
+  - Obsidian `Settings -> Appearance -> CSS snippets`에서 reload
+  - 또는 앱 재시작
+
+### 2026-03-08 18:56 (KST) Obsidian CSS Snippet Tuning
+- 2차 보정 내용:
+  - 완료 task 부모 줄뿐 아니라 그 아래 nested bullet도 함께 muted 처리
+  - 완료 블록 전체가 하나의 완료된 단위처럼 보이도록 조정
+- 알려진 한계:
+  - Live Preview에서 현재 편집 중인 줄의 raw markdown 표시는 CSS만으로 완전히 숨길 수 없다.
+
+### 2026-03-08 19:06 (KST) Obsidian CSS Snippet Tuning
+- 3차 보정 내용:
+  - Live Preview에서 완료 task 아래 child bullet과 wrapped line을 sibling selector로 함께 묶었다.
+  - 완료 블록 다음의 다른 리스트까지 스타일이 번지지 않도록 reset selector를 추가했다.
+- 계속 남는 한계:
+  - active line의 raw markdown 노출은 Obsidian 편집기 기본 동작이라 완전 제거는 어렵다.
+
+### 2026-03-08 19:12 (KST) Steam Build Smoke Status
+- 현재 상태:
+  - build smoke 준비 작업은 완료
+  - 팀원 전달용 빌드 패키지와 host/client 실행 절차는 사용 가능
+- 아직 남은 검증:
+  - 팀원과 실제 2실계정 기준 `host build / client build` smoke 실행
+  - host log의 lobby 생성 확인
+  - client log의 join / binder 적용 확인
+
+### 2026-03-09 00:03 (KST) Steam Build Smoke Result
+- 실환경 1차 결과:
+  - host/client는 같은 세션 진입에 성공
+  - 즉, Steam build smoke의 lobby/join 경로는 일단 통과
+- 남은 문제:
+  - client에서 로컬 조작이 되지 않음
+  - client 시점이 host와 같은 오브젝트 시점을 봄
+- 해석:
+  - transport/session 연결보다 player ownership, input gating, camera possession 경계 이슈일 가능성이 높다.
+
+### 2026-03-09 04:35 (KST) Steam Build Smoke Usability Update
+- build 산출물에 간단 실행 배치를 포함하도록 변경했다.
+  - `RunHost.bat`
+  - `RunClient.bat`
+- 사용 방법:
+  - host:
+    - build 폴더에서 `RunHost.bat` 실행
+  - client:
+    - build 폴더에서 `RunClient.bat` 실행
+    - 첫 인자로 lobbyId를 넘기거나, 실행 후 prompt에 lobbyId 입력
+- 추가 수정:
+  - Main Camera는 runtime에 local owner player를 primary target으로 다시 잡도록 보정했다.
+  - `PlayerOwnershipInputGate`는 gate 상태 변화를 로그에 남겨 실제 smoke에서 owner/input 상태를 더 쉽게 확인할 수 있다.
+
+### 2026-03-09 04:48 (KST) Dual-Machine Git Workflow Update
+- 신규 스크립트:
+  - `.codex/workflows/netcode/sync-and-build-steam-smoke.ps1`
+  - `.codex/workflows/netcode/sync-and-build-steam-smoke.bat`
+- 역할:
+  - 현재 브랜치 `git fetch/pull --ff-only`
+  - dirty worktree 기본 차단
+  - 최신 소스 기준 Steam smoke build 실행
+  - build output의 `build-info.txt` 출력
+- 권장 순서:
+  1. 데스크탑에서 작업 후 commit + push
+  2. 노트북에서:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-build-steam-smoke.ps1
+```
+  또는
+```bat
+.codex\workflows\netcode\sync-and-build-steam-smoke.bat
+```
+  3. `Builds/SteamSmokeWindows64/build-info.txt`에서 branch/commit 확인
+  4. host/client는 `RunHost.bat` / `RunClient.bat <lobbyId>` 사용
