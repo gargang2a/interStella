@@ -1,3 +1,4 @@
+using FishNet.Object.Prediction;
 using InterStella.Game.Features.Fuel;
 using UnityEngine;
 
@@ -41,6 +42,7 @@ namespace InterStella.Game.Features.Player
 
         private Rigidbody _rigidbody;
         private bool _isTetherConstrained;
+        private bool _useExternalSimulation;
 
         public PlayerMotorState CurrentState { get; private set; }
         public Rigidbody Body => _rigidbody;
@@ -95,23 +97,36 @@ namespace InterStella.Game.Features.Player
                 return;
             }
 
-            if (_networkBridge != null && !_networkBridge.IsAuthoritativeOwner)
+            if (_useExternalSimulation)
             {
-                CurrentState = new PlayerMotorState(
-                    _rigidbody.velocity,
-                    _rigidbody.angularVelocity,
-                    false,
-                    false,
-                    _playerFuel.IsDepleted,
-                    _isTetherConstrained);
+                RefreshCurrentState();
                 return;
             }
 
-            PlayerInputSample inputSample = _inputReader.CurrentSample;
-            float deltaTime = Time.fixedDeltaTime;
+            if (_networkBridge != null && !_networkBridge.IsAuthoritativeOwner)
+            {
+                RefreshCurrentState();
+                return;
+            }
 
-            bool hasTranslationInput = inputSample.Translation.sqrMagnitude > 0.0001f;
+            Simulate(_inputReader.CurrentSample, Time.fixedDeltaTime);
+        }
+
+        public void SetExternalSimulationEnabled(bool useExternalSimulation)
+        {
+            _useExternalSimulation = useExternalSimulation;
+        }
+
+        public void Simulate(PlayerInputSample inputSample, float deltaTime, PredictionRigidbody predictionBody = null)
+        {
+            if (_playerFuel == null)
+            {
+                return;
+            }
+
             bool usedFuelThisFrame = false;
+            Vector3 translationForce = Vector3.zero;
+            bool hasTranslationInput = inputSample.Translation.sqrMagnitude > 0.0001f;
 
             if (hasTranslationInput && !_playerFuel.IsDepleted)
             {
@@ -120,20 +135,36 @@ namespace InterStella.Game.Features.Player
 
                 if (_playerFuel.TryConsume(reason, deltaTime))
                 {
-                    Vector3 desiredAccel = inputSample.Translation * (_thrustAcceleration * boostScale);
-                    _rigidbody.AddRelativeForce(desiredAccel, ForceMode.Acceleration);
+                    translationForce = inputSample.Translation * (_thrustAcceleration * boostScale);
                     usedFuelThisFrame = true;
                 }
             }
 
-            if (inputSample.IsBraking)
+            bool shouldBrake = false;
+            if (inputSample.IsBraking && _playerFuel.TryConsume(FuelUseReason.Recovery, deltaTime))
             {
-                if (_playerFuel.TryConsume(FuelUseReason.Recovery, deltaTime))
-                {
-                    _rigidbody.velocity *= Mathf.Clamp01(1f - (_brakeDamping * deltaTime));
-                    _rigidbody.angularVelocity *= Mathf.Clamp01(1f - (_brakeDamping * deltaTime));
-                    usedFuelThisFrame = true;
-                }
+                shouldBrake = true;
+                usedFuelThisFrame = true;
+            }
+
+            if (shouldBrake)
+            {
+                float damping = Mathf.Clamp01(1f - (_brakeDamping * deltaTime));
+                SetLinearVelocity(_rigidbody.velocity * damping, predictionBody);
+                SetAngularVelocity(_rigidbody.angularVelocity * damping, predictionBody);
+            }
+
+            if (_isTetherConstrained)
+            {
+                SetLinearVelocity(_rigidbody.velocity * 0.995f, predictionBody);
+            }
+
+            SetLinearVelocity(Vector3.ClampMagnitude(_rigidbody.velocity, _maxLinearSpeed), predictionBody);
+            SetAngularVelocity(Vector3.ClampMagnitude(_rigidbody.angularVelocity, _maxAngularSpeed), predictionBody);
+
+            if (translationForce.sqrMagnitude > 0.0001f)
+            {
+                AddRelativeForce(translationForce, ForceMode.Acceleration, predictionBody);
             }
 
             if (!_playerFuel.IsDepleted)
@@ -144,25 +175,32 @@ namespace InterStella.Game.Features.Player
                     torque.x *= _lookAcceleration;
                     torque.y *= _lookAcceleration;
                     torque.z *= _rollAcceleration;
-                    _rigidbody.AddRelativeTorque(torque, ForceMode.Acceleration);
+                    AddRelativeTorque(torque, ForceMode.Acceleration, predictionBody);
                 }
             }
 
-            if (_isTetherConstrained)
+            _playerFuel.RecoverWhenIdle(deltaTime, !usedFuelThisFrame);
+
+            if (predictionBody != null)
             {
-                _rigidbody.velocity *= 0.995f;
+                predictionBody.Simulate();
             }
 
-            _rigidbody.velocity = Vector3.ClampMagnitude(_rigidbody.velocity, _maxLinearSpeed);
-            _rigidbody.angularVelocity = Vector3.ClampMagnitude(_rigidbody.angularVelocity, _maxAngularSpeed);
+            RefreshCurrentState(inputSample.IsBoosting, inputSample.IsBraking);
+        }
 
-            _playerFuel.RecoverWhenIdle(deltaTime, !usedFuelThisFrame);
+        public void RefreshCurrentState(bool isBoosting = false, bool isBraking = false)
+        {
+            if (_playerFuel == null)
+            {
+                return;
+            }
 
             CurrentState = new PlayerMotorState(
                 _rigidbody.velocity,
                 _rigidbody.angularVelocity,
-                inputSample.IsBoosting,
-                inputSample.IsBraking,
+                isBoosting,
+                isBraking,
                 _playerFuel.IsDepleted,
                 _isTetherConstrained);
         }
@@ -170,6 +208,51 @@ namespace InterStella.Game.Features.Player
         public void SetTetherConstrained(bool isConstrained)
         {
             _isTetherConstrained = isConstrained;
+            RefreshCurrentState(CurrentState.IsBoosting, CurrentState.IsBraking);
+        }
+
+        private void AddRelativeForce(Vector3 force, ForceMode mode, PredictionRigidbody predictionBody)
+        {
+            if (predictionBody != null)
+            {
+                predictionBody.AddRelativeForce(force, mode);
+                return;
+            }
+
+            _rigidbody.AddRelativeForce(force, mode);
+        }
+
+        private void AddRelativeTorque(Vector3 torque, ForceMode mode, PredictionRigidbody predictionBody)
+        {
+            if (predictionBody != null)
+            {
+                predictionBody.AddRelativeTorque(torque, mode);
+                return;
+            }
+
+            _rigidbody.AddRelativeTorque(torque, mode);
+        }
+
+        private void SetLinearVelocity(Vector3 velocity, PredictionRigidbody predictionBody)
+        {
+            if (predictionBody != null)
+            {
+                predictionBody.Velocity(velocity);
+                return;
+            }
+
+            _rigidbody.velocity = velocity;
+        }
+
+        private void SetAngularVelocity(Vector3 angularVelocity, PredictionRigidbody predictionBody)
+        {
+            if (predictionBody != null)
+            {
+                predictionBody.AngularVelocity(angularVelocity);
+                return;
+            }
+
+            _rigidbody.angularVelocity = angularVelocity;
         }
     }
 }

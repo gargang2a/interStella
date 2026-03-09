@@ -14,6 +14,9 @@ namespace InterStella.Game.Netcode.Runtime
         [SerializeField]
         private PlayerNetworkBridge _playerNetworkBridge;
 
+        [SerializeField]
+        private PlayerMovementPrediction _movementPrediction;
+
         [SerializeField, Min(0.02f)]
         private float _sendInterval = 0.1f;
 
@@ -66,6 +69,34 @@ namespace InterStella.Game.Netcode.Runtime
         {
             if (_playerFuel == null || (!IsServerStarted && !IsClientStarted))
             {
+                return;
+            }
+
+            if (UsesServerAuthoritativeFuel())
+            {
+                if (!IsServerStarted)
+                {
+                    return;
+                }
+
+                float serverNow = Time.unscaledTime;
+                if (serverNow < _nextSendTime)
+                {
+                    return;
+                }
+
+                float authoritativeFuel = _playerFuel.CurrentFuel;
+                if (Mathf.Abs(authoritativeFuel - _lastSubmittedFuel) < _minimumDeltaToSync)
+                {
+                    return;
+                }
+
+                _lastSubmittedFuel = authoritativeFuel;
+                _nextSendTime = serverNow + _sendInterval;
+
+                float clampedAuthoritativeFuel = ClampFuel(authoritativeFuel);
+                _currentFuelSync.Value = clampedAuthoritativeFuel;
+                UpdateLastAcceptedFuel(clampedAuthoritativeFuel);
                 return;
             }
 
@@ -267,7 +298,7 @@ namespace InterStella.Game.Netcode.Runtime
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        protected override void OnValidate()
         {
             ResolveDependenciesIfMissing();
         }
@@ -284,6 +315,16 @@ namespace InterStella.Game.Netcode.Runtime
             {
                 _playerNetworkBridge = GetComponent<PlayerNetworkBridge>();
             }
+
+            if (_movementPrediction == null)
+            {
+                _movementPrediction = GetComponent<PlayerMovementPrediction>();
+            }
+        }
+
+        private bool UsesServerAuthoritativeFuel()
+        {
+            return _movementPrediction != null && _movementPrediction.UsesServerAuthoritativeFuel;
         }
     }
 }

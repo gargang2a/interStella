@@ -115,6 +115,17 @@
   - 다음 smoke에서는 주변 오브젝트 위치 차이를 false discrepancy로 제거한 상태에서
     실제 player movement sync만 다시 볼 수 있다.
 
+### 2026-03-09 06:52 (KST)
+
+> [!warning] Player movement netcode is the true remaining blocker
+> false discrepancy를 제거한 뒤에도 플레이어 위치가 peer 간 다르게 보인다면, 현재 movement stack이 `owner local sim + NetworkTransform` 의존이라는 뜻이다.
+
+- 현재 진단:
+  - player `NetworkTransform`은 client-authoritative
+  - `PlayerMotor`는 FishNet `Replicate/Reconcile` 부재
+- 결론:
+  - 다음 작업은 설정 튜닝이 아니라 `player movement prediction/reconcile` 구현이다.
+
 ### 2026-03-08 18:47 (KST)
 
 > [!success] Play Mode startup cleanup done
@@ -181,3 +192,22 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\launch-steam
   - `Build Guide.md`
 - 설계/의사결정:
   - `기획서.md`
+
+### 2026-03-10 01:12 (KST)
+
+> [!info] Player movement sync path replaced
+> 주변 오브젝트 mismatch는 정리됐고, 남은 실제 blocker였던 player movement sync를 prediction/reconcile 구조로 전환했다.
+
+- 변경 핵심:
+  - `PlayerMotor` 외부 tick simulation 지원
+  - `PlayerMovementPrediction` 추가
+  - player `NetworkObject` prediction 활성화
+  - player `NetworkTransform` client-authoritative sync 비활성화
+  - fuel publish를 movement prediction 경로에 맞춰 server authoritative로 전환
+- 검증:
+  - Unity script validation 통과
+  - EditMode tests `17/17 PASS`
+  - 새 smoke build/OneDrive publish 갱신 완료
+- 지금 다시 확인할 것:
+  - host/client에서 상대 player 위치가 같은 의미로 보이는지
+  - 이동/회전 오차가 실제 플레이 가능한 수준으로 줄었는지

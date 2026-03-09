@@ -1203,6 +1203,7 @@ GameObject:
   - component: {fileID: 531697748}
   - component: {fileID: 531697751}
   - component: {fileID: 531697752}
+  - component: {fileID: 531697753}
   m_Layer: 0
   m_Name: PlayerB
   m_TagString: Untagged
@@ -1217,7 +1218,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 531697734}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1bd4277c679653348bc06ae698a1ead7, type: 3}
   m_Name: 
@@ -1511,8 +1512,8 @@ MonoBehaviour:
   _extrapolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  _clientAuthoritative: 1
-  _sendToOwner: 1
+  _clientAuthoritative: 0
+  _sendToOwner: 0
   _interval: 1
   _synchronizePosition: 1
   _positionSensitivity: 0.001
@@ -1562,8 +1563,8 @@ MonoBehaviour:
   _defaultDespawnType: 0
   _initializedTimestamp: 0
   NetworkObserver: {fileID: 0}
-  _enablePrediction: 0
-  _predictionType: 0
+  _enablePrediction: 1
+  _predictionType: 1
   _localReconcileCorrectionType: 2
   _graphicalObject: {fileID: 0}
   _detachGraphicalObject: 0
@@ -1626,6 +1627,24 @@ MonoBehaviour:
   _serverRequestCooldown: 0.05
   _logRejectedRequests: 0
   _logAcceptedRequests: 1
+--- !u!114 &531697753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 531697734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 357f9efde62c4cd0af1f5db095053ee8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: 531697750}
+  _networkObjectCache: {fileID: 0}
+  _playerMotor: {fileID: 531697740}
+  _inputReader: {fileID: 531697742}
+  _playerFuel: {fileID: 531697741}
 --- !u!1 &781150863
 GameObject:
   m_ObjectHideFlags: 0
@@ -3552,6 +3571,7 @@ GameObject:
   - component: {fileID: 2137637289}
   - component: {fileID: 2137637292}
   - component: {fileID: 2137637293}
+  - component: {fileID: 2137637294}
   m_Layer: 0
   m_Name: PlayerA
   m_TagString: Untagged
@@ -3566,7 +3586,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2137637275}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1bd4277c679653348bc06ae698a1ead7, type: 3}
   m_Name: 
@@ -3860,8 +3880,8 @@ MonoBehaviour:
   _extrapolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  _clientAuthoritative: 1
-  _sendToOwner: 1
+  _clientAuthoritative: 0
+  _sendToOwner: 0
   _interval: 1
   _synchronizePosition: 1
   _positionSensitivity: 0.001
@@ -3911,8 +3931,8 @@ MonoBehaviour:
   _defaultDespawnType: 0
   _initializedTimestamp: 0
   NetworkObserver: {fileID: 0}
-  _enablePrediction: 0
-  _predictionType: 0
+  _enablePrediction: 1
+  _predictionType: 1
   _localReconcileCorrectionType: 2
   _graphicalObject: {fileID: 0}
   _detachGraphicalObject: 0
@@ -3975,6 +3995,24 @@ MonoBehaviour:
   _serverRequestCooldown: 0.05
   _logRejectedRequests: 0
   _logAcceptedRequests: 1
+--- !u!114 &2137637294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137637275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 357f9efde62c4cd0af1f5db095053ee8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: 2137637291}
+  _networkObjectCache: {fileID: 0}
+  _playerMotor: {fileID: 2137637281}
+  _inputReader: {fileID: 2137637283}
+  _playerFuel: {fileID: 2137637282}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

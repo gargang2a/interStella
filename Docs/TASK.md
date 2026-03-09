@@ -1345,3 +1345,65 @@
 - [ ] 다음 단계
   - 새 build/publish 후 주변 오브젝트 배치가 동일하게 보이는지 재확인
   - 그 다음 플레이어 위치 오차만 남는지 분리 판정
+
+### 2026-03-09 06:52 (KST) 진행 스냅샷
+- [x] false discrepancy 제거 후 실제 player movement blocker 확인
+  - 최신 smoke 결과:
+    - 주변 오브젝트 배치는 맞춰짐
+    - 플레이어 위치는 여전히 peer 간 크게 다르게 보임
+- [x] 원인 진단
+  - 현재 player object 상태:
+    - `NetworkTransform._clientAuthoritative = 1`
+    - `NetworkTransform._sendToOwner = 1`
+  - 현재 player movement 상태:
+    - `PlayerMotor`는 FishNet `Replicate/Reconcile`을 사용하지 않음
+    - owner local sim + transform sync에 크게 의존
+  - 해석:
+    - 각 peer가 자기 로컬 player를 먼저 움직이고,
+    - 다른 쪽 player는 transform smoothing으로 뒤늦게 받기 때문에,
+    - "같은 시점의 같은 위치"를 공유하지 못한다.
+- [ ] 다음 단계
+  - `PlayerMotor` movement netcode를 FishNet prediction(`Replicate/Reconcile`) 경계로 교체
+  - `NetworkTransform`은 spectator 표현 기준으로 재정의하거나 제거 여부 결정
+  - 새 구조에서 owner/local feel과 host authoritative truth를 동시에 맞추기
+
+### 2026-03-10 01:12 (KST) 진행 스냅샷
+- [x] 주변 오브젝트 mismatch 이후 남은 실제 blocker를 player movement sync로 확정
+  - 관찰 결과:
+    - 주변 오브젝트 배치는 host/client에서 맞아짐
+    - 플레이어 위치만 peer 간 다르게 보임
+  - 결론:
+    - false discrepancy 정리 이후 남은 문제는 실제 movement authority 경로임
+- [x] player movement 경로를 prediction/reconcile 구조로 교체
+  - 수정 파일:
+    - Assets/Game/Features/Player/PlayerMotor.cs
+    - Assets/Game/Netcode/Runtime/PlayerMovementPrediction.cs
+    - Assets/Game/Netcode/Runtime/PlayerFuelNetworkState.cs
+    - Assets/Game/Scenes/VerticalSlice/VerticalSlice_MVP.unity
+  - 변경 내용:
+    - `PlayerMotor`는 외부 tick 기반 simulation 경로를 지원하도록 분리
+    - `PlayerMovementPrediction`을 추가해 FishNet `Replicate/Reconcile` 기반으로 owner/server가 같은 입력 시뮬레이션을 공유
+    - player `NetworkObject`는 prediction enabled로 전환
+    - player `NetworkTransform`은 client-authoritative sync를 끄고 spectator 보조 역할에서도 제외
+    - 연료는 movement prediction 경로가 있을 때 client submit 대신 server authoritative publish를 사용
+- [x] Unity 검증
+  - script validation:
+    - PlayerMovementPrediction.cs errors=0 warnings=0
+    - PlayerMotor.cs errors=0 warnings=0
+    - PlayerFuelNetworkState.cs errors=0 warnings=1(existing analyzer noise only)
+  - console 확인:
+    - 새 prediction 파일 관련 compile error 없음
+    - 기존 unrelated warning만 남음(RepairObjectiveNetworkState/TetherNetworkStateReplicator OnValidate)
+  - EditMode tests:
+    - total=17, passed=17, failed=0
+- [x] 새 smoke build/publish 갱신
+  - 로컬 build:
+    - Builds/SteamSmokeWindows64/build-info.txt 갱신 완료
+  - OneDrive publish:
+    - C:\Users\gar\OneDrive\interStellaBuilds\SteamSmokeWindows64 갱신 완료
+- [ ] 다음 단계
+  - 데스크톱 `RunHost.bat`, 노트북 `RunClient.bat`로 새 build smoke 재실행
+  - 확인 항목:
+    - 서로 상대 플레이어 위치가 같은 의미로 보이는지
+    - 이동/회전 오차가 실사용 수준으로 줄었는지
+    - fuel, tether constraint가 prediction 경로에서도 안정적으로 유지되는지

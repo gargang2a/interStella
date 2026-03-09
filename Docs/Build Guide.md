@@ -1522,3 +1522,19 @@ powershell -ExecutionPolicy Bypass -File .\.codex\workflows\netcode\sync-and-bui
   - regression seed는 이제 editor에서만 기본 활성
   - player build에서는 기본 비활성
   - 필요할 때만 `-interstella-enable-regression-seed 1`로 강제 활성화
+
+### 2026-03-10 01:12 (KST) Movement Prediction Smoke Note
+- 최신 build smoke 기준으로 `주변 오브젝트 mismatch`는 정리되었고, 남은 핵심 검증 항목은 `player movement sync`다.
+- 이번 빌드부터 player runtime 경계가 바뀌었다.
+  - `PlayerMovementPrediction`이 FishNet `Replicate/Reconcile`로 movement를 구동한다.
+  - player `NetworkTransform`의 client-authoritative sync는 꺼져 있다.
+  - fuel은 movement prediction 경로에서 server authoritative publish를 사용한다.
+- 따라서 이번 smoke에서 꼭 볼 것:
+  1. host/client에서 상대 플레이어 위치와 회전이 같은 의미로 보이는지
+  2. local owner 조작감이 유지되면서도 remote 위치가 뒤틀리지 않는지
+  3. tether constraint와 fuel drain이 movement prediction 경로에서도 같은 규칙으로 보이는지
+- 운영 순서는 그대로 유지한다.
+  1. 데스크톱 Unity 메뉴 빌드
+  2. `publish-steam-smoke-build.bat`
+  3. OneDrive build 폴더의 `RunHost.bat`
+  4. 노트북 OneDrive build 폴더의 `RunClient.bat`
